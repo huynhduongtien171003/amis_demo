@@ -1,0 +1,87 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║             🚀 AMIS OCR SYSTEM - QUICK START                      ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+📌 HỆ THỐNG ĐANG CHẠY:
+   ✅ Backend API:  http://localhost:8000
+   ✅ Frontend UI:  http://localhost:5500
+   ✅ API Docs:     http://localhost:8000/docs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 TEST NHANH - 3 BƯỚC:
+
+[1] Mở frontend trong trình duyệt:
+    → http://localhost:5500
+
+[2] Test OCR với text mẫu:
+    ① Chuyển sang tab "⌨️ Nhập text"
+    ② Copy nội dung từ file: test-invoice-sample.txt
+    ③ Paste vào ô text
+    ④ Click "Phân tích hóa đơn"
+    ⑤ Đợi 5-10 giây → Xem kết quả!
+
+[3] Test export:
+    → Click "📥 Export Excel"
+    → File Excel sẽ được tải về
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 CÁC LỆNH HỮU ÍCH:
+
+Backend (Docker):
+  docker-compose logs -f          # Xem logs backend
+  docker-compose restart          # Restart backend
+  docker-compose down             # Stop backend
+  docker-compose up -d            # Start backend
+
+Frontend:
+  run-frontend.bat                # Start frontend (Windows)
+  cd frontend && python -m http.server 5500    # Start manual
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 TEST CASES:
+
+✓ Upload ảnh hóa đơn (JPG, PNG, PDF)
+✓ Nhập text hóa đơn thủ công
+✓ Chỉnh sửa thông tin sau khi OCR
+✓ Export sang Excel format AMIS
+✓ Reset và làm mới
+
+Chi tiết: Xem file TEST_GUIDE.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🐛 TROUBLESHOOTING:
+
+❌ Frontend không kết nối được Backend?
+   → Kiểm tra: docker-compose ps
+   → Restart: docker-compose restart
+
+❌ Lỗi OpenAI API?
+   → Kiểm tra API key trong file .env
+   → Restart backend: docker-compose restart
+
+❌ CORS error?
+   → Đảm bảo chạy frontend qua HTTP server
+   → KHÔNG mở file HTML trực tiếp
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 TÀI LIỆU:
+
+README.md         → Tổng quan hệ thống
+TEST_GUIDE.md     → Hướng dẫn test chi tiết
+DOCKER.md         → Hướng dẫn Docker
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 TIP: Mở cả 3 URL trong browser:
+   • http://localhost:5500       (Frontend UI)
+   • http://localhost:8000/docs  (API Documentation)
+   • Browser DevTools (F12)      (Debug console)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Chúc test thành công! 🎉

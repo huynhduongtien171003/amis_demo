@@ -1,0 +1,167 @@
+# ==========================================
+# AMIS OCR System - Docker Compose
+# ==========================================
+# Production-ready configuration với health checks, logging, và resource limits
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # Main Application Service
+  # ==========================================
+  amis-ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: amis-ocr-backend
+    restart: unless-stopped
+    
+    # Environment variables
+    env_file:
+      - .env
+    
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=8000
+    
+    # Port mapping
+    ports:
+      - "${PORT:-8000}:8000"
+    
+    # Volume mounts (persistent data)
+    volumes:
+      # Data directories
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+      
+      # Development: Uncomment để hot-reload code
+      # - ./backend:/app/backend
+      # - ./frontend:/app/frontend
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Networks
+    networks:
+      - amis-network
+    
+    # Dependencies (nếu có services khác)
+    # depends_on:
+    #   - postgres
+    #   - redis
+
+  # ==========================================
+  # PostgreSQL Database (Optional - Uncomment nếu cần)
+  # ==========================================
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: amis-ocr-db
+  #   restart: unless-stopped
+  #   
+  #   environment:
+  #     POSTGRES_DB: ${DB_NAME:-amis_ocr}
+  #     POSTGRES_USER: ${DB_USER:-amis}
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+  #   
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   
+  #   ports:
+  #     - "5432:5432"
+  #   
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-amis}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   
+  #   networks:
+  #     - amis-network
+
+  # ==========================================
+  # Redis Cache (Optional - Uncomment nếu cần)
+  # ==========================================
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: amis-ocr-cache
+  #   restart: unless-stopped
+  #   
+  #   command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+  #   
+  #   volumes:
+  #     - redis_data:/data
+  #   
+  #   ports:
+  #     - "6379:6379"
+  #   
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   
+  #   networks:
+  #     - amis-network
+
+  # ==========================================
+  # Nginx Reverse Proxy (Optional - Uncomment cho production)
+  # ==========================================
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: amis-ocr-nginx
+  #   restart: unless-stopped
+  #   
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/ssl:/etc/nginx/ssl:ro
+  #   
+  #   depends_on:
+  #     - amis-ocr
+  #   
+  #   networks:
+  #     - amis-network
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  amis-network:
+    driver: bridge
+
+# ==========================================
+# Volumes (Uncomment nếu dùng database)
+# ==========================================
+# volumes:
+#   postgres_data:
+#     driver: local
+#   redis_data:
+#     driver: local

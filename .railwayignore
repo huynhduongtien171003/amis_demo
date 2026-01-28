@@ -1,0 +1,72 @@
+# Railway Ignore File
+# Các file/folder không cần deploy lên Railway
+
+# Environment
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+nul
+
+# Uploads and outputs (sẽ được tạo lại trên Railway)
+uploads/*
+!uploads/.gitkeep
+outputs/*
+!outputs/.gitkeep
+
+# Test files
+test*.txt
+test*.py
+TEST_GUIDE.md
+
+# Docker files (không cần khi deploy Railway)
+Dockerfile
+docker-compose.yml
+.dockerignore
+DOCKER.md
+
+# Development
+Makefile
+QUICK_START.md
+QUICK_START.txt
+
+# Claude
+.claude/

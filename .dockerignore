@@ -1,0 +1,113 @@
+# ==========================================
+# AMIS OCR System - Docker Ignore
+# ==========================================
+# Loại bỏ các file không cần thiết khỏi Docker image
+
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+venv/
+env/
+ENV/
+.venv/
+virtualenv/
+
+# ==========================================
+# IDEs & Editors
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# ==========================================
+# OS Files
+# ==========================================
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+
+# ==========================================
+# Git
+# ==========================================
+.git/
+.gitignore
+.gitattributes
+
+# ==========================================
+# Documentation
+# ==========================================
+README.md
+DOCKER.md
+QUICKSTART.md
+docs/
+*.md
+
+# ==========================================
+# Data & Logs
+# ==========================================
+uploads/
+outputs/
+logs/
+*.log
+
+# ==========================================
+# Environment Files
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# Docker Files (không cần trong image)
+# ==========================================
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# ==========================================
+# CI/CD
+# ==========================================
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# ==========================================
+# Tests
+# ==========================================
+tests/
+test_*/
+*_test.py
+pytest.ini
+
+# ==========================================
+# Build artifacts
+# ==========================================
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
