@@ -79,21 +79,31 @@
       }
 
       .card::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         height: 5px;
-        background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+        background: linear-gradient(
+          90deg,
+          var(--primary),
+          var(--secondary),
+          var(--primary)
+        );
         border-radius: 24px 24px 0 0;
         background-size: 200% 100%;
         animation: gradientShift 3s ease infinite;
       }
 
       @keyframes gradientShift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
       }
 
       /* Tabs */
@@ -121,7 +131,7 @@
       }
 
       .tab::before {
-        content: '';
+        content: "";
         position: absolute;
         bottom: -2px;
         left: 0;
@@ -163,19 +173,28 @@
         text-align: center;
         cursor: pointer;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.05));
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.08),
+          rgba(118, 75, 162, 0.05)
+        );
         position: relative;
         overflow: hidden;
       }
 
       .upload-area::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
         transition: left 0.5s;
       }
 
@@ -184,7 +203,11 @@
       }
 
       .upload-area:hover {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.1));
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.15),
+          rgba(118, 75, 162, 0.1)
+        );
         transform: translateY(-3px);
         box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3);
         border-color: var(--secondary);
@@ -192,7 +215,11 @@
 
       .upload-area.dragover {
         border-color: var(--success);
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1));
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.15),
+          rgba(5, 150, 105, 0.1)
+        );
         transform: scale(1.02);
       }
 
@@ -203,8 +230,13 @@
       }
 
       @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
       }
 
       #fileInput {
@@ -333,7 +365,7 @@
       }
 
       button::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 50%;
         left: 50%;
@@ -342,7 +374,9 @@
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.2);
         transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
+        transition:
+          width 0.6s,
+          height 0.6s;
       }
 
       button:hover::before {
@@ -408,7 +442,7 @@
       }
 
       .spinner::after {
-        content: '';
+        content: "";
         position: absolute;
         top: 50%;
         left: 50%;
@@ -438,8 +472,13 @@
       }
 
       @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; }
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
       }
 
       /* Results */
@@ -553,7 +592,7 @@
       .info-value input.number-field {
         font-weight: 600;
         color: #059669;
-        font-family: 'Courier New', monospace;
+        font-family: "Courier New", monospace;
       }
 
       .section-header {
@@ -716,7 +755,14 @@
             onclick="document.getElementById('fileInput').click()"
           >
             <div class="upload-icon">📁</div>
-            <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px; color: #1f2937;">
+            <div
+              style="
+                font-size: 1.2rem;
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: #1f2937;
+              "
+            >
               Kéo thả file vào đây hoặc click để chọn
             </div>
             <div style="color: #6b7280; font-size: 0.95rem; margin-top: 10px">
@@ -733,7 +779,13 @@
           <!-- Image Preview -->
           <div id="imagePreview" class="image-preview">
             <div class="preview-container">
-              <button class="remove-image" onclick="removeImage()" title="Xóa ảnh">✕</button>
+              <button
+                class="remove-image"
+                onclick="removeImage()"
+                title="Xóa ảnh"
+              >
+                ✕
+              </button>
               <img id="previewImg" src="" alt="Preview" />
             </div>
             <div class="preview-info">
@@ -742,7 +794,14 @@
           </div>
 
           <div style="margin-top: 25px">
-            <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #1f2937; font-size: 1.05rem;"
+            <label
+              style="
+                font-weight: 600;
+                margin-bottom: 10px;
+                display: block;
+                color: #1f2937;
+                font-size: 1.05rem;
+              "
               >Loại chứng từ:</label
             >
             <select
@@ -773,7 +832,14 @@
 
         <!-- Text Tab -->
         <div id="textTab" class="tab-content">
-          <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #1f2937; font-size: 1.05rem;"
+          <label
+            style="
+              font-weight: 600;
+              margin-bottom: 10px;
+              display: block;
+              color: #1f2937;
+              font-size: 1.05rem;
+            "
             >Nội dung hóa đơn:</label
           >
           <textarea
@@ -790,7 +856,14 @@ Khách hàng: Công ty XYZ
           ></textarea>
 
           <div style="margin-top: 25px">
-            <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #1f2937; font-size: 1.05rem;"
+            <label
+              style="
+                font-weight: 600;
+                margin-bottom: 10px;
+                display: block;
+                color: #1f2937;
+                font-size: 1.05rem;
+              "
               >Loại chứng từ:</label
             >
             <select
@@ -890,7 +963,7 @@ Khách hàng: Công ty XYZ
     </div>
 
     <script>
-      const API_URL = "http://localhost:8000";
+      const API_URL = window.location.origin;
       let currentJobId = null;
 
       function formatMoney(val) {
@@ -951,14 +1024,16 @@ Khách hàng: Công ty XYZ
         }
 
         // Show preview for images
-        if (file.type.startsWith('image/')) {
+        if (file.type.startsWith("image/")) {
           const reader = new FileReader();
-          reader.onload = function(e) {
-            document.getElementById('previewImg').src = e.target.result;
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileSize').textContent = formatFileSize(file.size);
-            document.getElementById('imagePreview').classList.add('show');
-            document.getElementById('uploadArea').style.display = 'none';
+          reader.onload = function (e) {
+            document.getElementById("previewImg").src = e.target.result;
+            document.getElementById("fileName").textContent = file.name;
+            document.getElementById("fileSize").textContent = formatFileSize(
+              file.size,
+            );
+            document.getElementById("imagePreview").classList.add("show");
+            document.getElementById("uploadArea").style.display = "none";
           };
           reader.readAsDataURL(file);
         }
@@ -968,17 +1043,17 @@ Khách hàng: Công ty XYZ
       }
 
       function formatFileSize(bytes) {
-        if (bytes < 1024) return bytes + ' B';
-        else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        if (bytes < 1024) return bytes + " B";
+        else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        else return (bytes / (1024 * 1024)).toFixed(1) + " MB";
       }
 
       function removeImage() {
-        document.getElementById('fileInput').value = '';
-        document.getElementById('imagePreview').classList.remove('show');
-        document.getElementById('uploadArea').style.display = 'block';
-        document.getElementById('processBtn').disabled = true;
-        showAlert('🗑️ Đã xóa ảnh', 'success');
+        document.getElementById("fileInput").value = "";
+        document.getElementById("imagePreview").classList.remove("show");
+        document.getElementById("uploadArea").style.display = "block";
+        document.getElementById("processBtn").disabled = true;
+        showAlert("🗑️ Đã xóa ảnh", "success");
       }
 
       async function processImage() {
@@ -1004,7 +1079,7 @@ Khách hàng: Công ty XYZ
           }
 
           const data = await res.json();
-          console.log('API Response:', data);
+          console.log("API Response:", data);
           document.getElementById("loading").classList.remove("active");
 
           if (data.success) {
@@ -1012,11 +1087,14 @@ Khách hàng: Công ty XYZ
             displayResults(data.data);
             showAlert("✅ Xử lý thành công!", "success");
           } else {
-            console.error('API Error:', data);
-            showAlert("❌ Lỗi: " + (data.error_message || "Unknown error"), "error");
+            console.error("API Error:", data);
+            showAlert(
+              "❌ Lỗi: " + (data.error_message || "Unknown error"),
+              "error",
+            );
           }
         } catch (err) {
-          console.error('Request failed:', err);
+          console.error("Request failed:", err);
           document.getElementById("loading").classList.remove("active");
           showAlert("❌ Lỗi: " + err.message, "error");
         }
@@ -1045,7 +1123,7 @@ Khách hàng: Công ty XYZ
           }
 
           const data = await res.json();
-          console.log('API Response:', data);
+          console.log("API Response:", data);
           document.getElementById("loading").classList.remove("active");
 
           if (data.success) {
@@ -1053,11 +1131,14 @@ Khách hàng: Công ty XYZ
             displayResults(data.data);
             showAlert("✅ Phân tích thành công!", "success");
           } else {
-            console.error('API Error:', data);
-            showAlert("❌ Lỗi: " + (data.error_message || "Unknown error"), "error");
+            console.error("API Error:", data);
+            showAlert(
+              "❌ Lỗi: " + (data.error_message || "Unknown error"),
+              "error",
+            );
           }
         } catch (err) {
-          console.error('Request failed:', err);
+          console.error("Request failed:", err);
           document.getElementById("loading").classList.remove("active");
           showAlert("❌ Lỗi: " + err.message, "error");
         }
@@ -1065,8 +1146,8 @@ Khách hàng: Công ty XYZ
 
       function displayResults(data) {
         // Validate data structure
-        if (!data || typeof data !== 'object') {
-          console.error('Invalid data:', data);
+        if (!data || typeof data !== "object") {
+          console.error("Invalid data:", data);
           showAlert("❌ Dữ liệu không hợp lệ", "error");
           return;
         }
@@ -1185,8 +1266,8 @@ Khách hàng: Công ty XYZ
         document.getElementById("invoiceText").value = "";
         document.getElementById("processBtn").disabled = true;
         document.getElementById("resultSection").classList.remove("active");
-        document.getElementById('imagePreview').classList.remove('show');
-        document.getElementById('uploadArea').style.display = 'block';
+        document.getElementById("imagePreview").classList.remove("show");
+        document.getElementById("uploadArea").style.display = "block";
         currentJobId = null;
         showAlert("✨ Đã làm mới", "success");
       }
