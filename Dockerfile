@@ -1,18 +1,16 @@
 # ==========================================
 # AMIS OCR System - Production Dockerfile
+# Multi-stage build - Railway Ready
 # ==========================================
-# Multi-stage build để tối ưu kích thước image
-# Python 3.11 slim base image
 
 # ==========================================
 # Stage 1: Builder
 # ==========================================
 FROM python:3.11-slim as builder
 
-# Set working directory
 WORKDIR /app
 
-# Install build dependencies
+# Build dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
@@ -20,10 +18,8 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Python deps
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # ==========================================
@@ -31,42 +27,40 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 # ==========================================
 FROM python:3.11-slim
 
-# Metadata
 LABEL maintainer="AMIS OCR Team"
 LABEL version="1.0.0"
 LABEL description="OCR system for AMIS invoices using Claude AI"
 
-# Set working directory
 WORKDIR /app
 
-# Install runtime dependencies only
+# Runtime deps
 RUN apt-get update && apt-get install -y \
     curl \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies from builder
+# Copy python packages
 COPY --from=builder /root/.local /root/.local
 
-# Copy application code
-COPY backend/ ./backend/
-COPY frontend/ ./frontend/
+# Copy app
+COPY backend ./backend
+COPY frontend ./frontend
 
-# Create necessary directories
+# Runtime dirs
 RUN mkdir -p uploads outputs logs
 
-# Set environment variables
+# Env
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH=/root/.local/bin:$PATH \
     PYTHONPATH=/app
 
-# Expose port
+# Expose for documentation only
 EXPOSE 8000
 
-# Health check
+# Healthcheck (DÙNG PORT ĐỘNG)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD sh -c "curl -f http://localhost:$PORT/health || exit 1"
 
-# Run the application
-CMD ["python", "backend/main.py"]
+# START APP (CRITICAL FIX)
+CMD sh -c "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
