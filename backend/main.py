@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from backend.config import settings
-from backend import ocr_routes, export_routes
+from backend import ocr_routes, export_routes, order_routes
 
 
 # Khởi tạo FastAPI app
@@ -23,20 +23,27 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="""
-    AMIS OCR System - Hệ thống OCR hóa đơn tự động cho AMIS
-    
+    AMIS OCR & Order Recognition System
+
     **Tính năng:**
+
+    📄 **OCR Hóa đơn:**
     - ✅ OCR từ ảnh hóa đơn (JPG, PNG, PDF)
     - ✅ Nhập text thủ công (không cần ảnh)
     - ✅ Trích xuất thông tin tự động với OpenAI GPT-4
-    - ✅ Review và chỉnh sửa dữ liệu
     - ✅ Export sang Excel/JSON theo định dạng AMIS
 
+    📦 **Nhận diện Đơn hàng:**
+    - ✅ Nhận diện từ screenshot tin nhắn (Zalo, Messenger, Email)
+    - ✅ Nhập text đơn hàng thủ công
+    - ✅ Tự động lọc nhiễu (lời chào, emoji, thông tin không liên quan)
+    - ✅ Trích xuất: KH, SĐT, địa chỉ, sản phẩm, số lượng, giá
+
     **Workflow:**
-    1. Upload ảnh HOẶC nhập text hóa đơn
+    1. Upload ảnh/screenshot HOẶC nhập text
     2. OpenAI GPT-4 tự động trích xuất thông tin
     3. Review và sửa dữ liệu nếu cần
-    4. Export sang AMIS
+    4. Export/Lưu dữ liệu
     """,
     debug=settings.debug
 )
@@ -54,6 +61,7 @@ app.add_middleware(
 # Include routers
 app.include_router(ocr_routes.router)
 app.include_router(export_routes.router)
+app.include_router(order_routes.router)
 
 
 # Static files
@@ -100,13 +108,15 @@ async def shutdown_event():
 async def api_info():
     """API info endpoint"""
     return {
-        "message": "AMIS OCR System API",
+        "message": "AMIS OCR & Order Recognition System API",
         "version": settings.app_version,
         "docs": "/docs",
         "features": [
             "OCR từ ảnh hóa đơn",
+            "Nhận diện đơn hàng từ tin nhắn/screenshot",
             "Nhập text thủ công",
-            "Trích xuất thông tin tự động",
+            "Trích xuất thông tin tự động với AI",
+            "Lọc nhiễu và validate dữ liệu",
             "Export sang AMIS"
         ]
     }
