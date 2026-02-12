@@ -69,7 +69,8 @@ def save_uploaded_file(upload_file: UploadFile, job_id: str) -> str:
 
 @router.post("/upload", response_model=OrderResponse)
 async def upload_and_process_order_image(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    model: Optional[str] = Form(default=None)
 ):
     """
     [NGƯỜI BÁN] Upload ảnh screenshot tin nhắn khách hàng và nhận diện thông tin đặt hàng
@@ -109,8 +110,8 @@ async def upload_and_process_order_image(
         file_path = save_uploaded_file(file, job_id)
         logger.info(f"📸 File screenshot đã lưu: {file_path}")
 
-        # Xử lý nhận diện đơn hàng
-        result = await order_recognition_service.process_image_order(file_path)
+        # Xử lý nhận diện đơn hàng (cho phép override model)
+        result = await order_recognition_service.process_image_order(file_path, model_override=model)
 
         if not result["success"]:
             return OrderResponse(
@@ -154,7 +155,8 @@ async def upload_and_process_order_image(
 @router.post("/text", response_model=OrderResponse)
 async def process_text_order(
     message_text: str = Form(...),
-    additional_context: Optional[str] = Form(default=None)
+    additional_context: Optional[str] = Form(default=None),
+    model: Optional[str] = Form(default=None)
 ):
     """
     [NGƯỜI BÁN] Nhận diện thông tin khách hàng từ text tin nhắn (không cần upload ảnh)
@@ -191,8 +193,8 @@ async def process_text_order(
             additional_context=additional_context
         )
 
-        # Xử lý parsing
-        result = await order_recognition_service.process_text_order(text_input)
+        # Xử lý parsing (cho phép override model)
+        result = await order_recognition_service.process_text_order(text_input, model_override=model)
 
         if not result["success"]:
             return OrderResponse(

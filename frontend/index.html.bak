@@ -1,0 +1,1391 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nhận diện đơn hàng</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #6366f1;
+        --secondary: #4f46e5;
+        --success: #10b981;
+        --danger: #ef4444;
+        --dark: #1e293b;
+        --light: #f8fafc;
+        --border: #e2e8f0;
+        --customer-color: #8b5cf6;
+        --bg-gradient-1: #667eea;
+        --bg-gradient-2: #764ba2;
+        --card-bg: rgba(255, 255, 255, 0.95);
+        --surface: rgba(255, 255, 255, 0.7);
+      }
+
+      body {
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        background: linear-gradient(
+          135deg,
+          var(--bg-gradient-1) 0%,
+          var(--bg-gradient-2) 100%
+        );
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+        animation: fadeIn 0.6s;
+      }
+
+      h1 {
+        font-size: 3rem;
+        margin-bottom: 12px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fff 0%, #f0f0ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: none;
+      }
+
+      header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .card {
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        padding: 35px;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.1),
+          0 1px 2px rgba(255, 255, 255, 0.1) inset;
+        animation: slideUp 0.6s;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      /* Two Column Layout */
+      .input-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 30px;
+      }
+
+      .input-section {
+        background: var(--surface);
+        backdrop-filter: blur(10px);
+        padding: 28px;
+        border-radius: 20px;
+        border: 1px solid rgba(226, 232, 240, 0.5);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease;
+      }
+
+      .input-section:hover {
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* Upload Area - Refined */
+      .upload-area {
+        border: 2px dashed rgba(99, 102, 241, 0.2);
+        border-radius: 16px;
+        padding: 35px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.4);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .upload-area:hover {
+        background: rgba(99, 102, 241, 0.05);
+        border-color: rgba(99, 102, 241, 0.4);
+        transform: translateY(-1px);
+      }
+
+      .upload-area.dragover {
+        border-color: var(--primary);
+        background: rgba(99, 102, 241, 0.08);
+      }
+
+      .upload-icon {
+        font-size: 2.8rem;
+        margin-bottom: 12px;
+        opacity: 0.8;
+      }
+
+      /* Image Preview - Minimalist */
+      .image-preview {
+        display: none;
+        margin-top: 20px;
+        text-align: center;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .image-preview.show {
+        display: block;
+      }
+
+      .preview-container {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        background: white;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+      }
+
+      .preview-container img {
+        max-width: 100%;
+        max-height: 280px;
+        display: block;
+        border-radius: 10px;
+        object-fit: contain;
+      }
+
+      .preview-info {
+        margin-top: 12px;
+        padding: 10px 16px;
+        background: rgba(243, 244, 246, 0.6);
+        border-radius: 10px;
+        font-size: 0.85rem;
+        color: #6b7280;
+        display: inline-block;
+      }
+
+      /* Minimal Close Button */
+      .remove-image {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #6b7280;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        z-index: 10;
+        font-size: 1.2rem;
+        font-weight: 300;
+        opacity: 0.9;
+      }
+
+      .remove-image:hover {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+        border-color: rgba(239, 68, 68, 0.3);
+        transform: scale(1.05);
+      }
+
+      /* Text Area */
+      textarea {
+        width: 100%;
+        min-height: 280px;
+        padding: 18px;
+        border: 1.5px solid rgba(226, 232, 240, 0.8);
+        border-radius: 14px;
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        resize: vertical;
+        transition: all 0.3s ease;
+        line-height: 1.7;
+        background: rgba(248, 250, 252, 0.5);
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: white;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+      }
+
+      /* Buttons */
+      .btn {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 14px 28px;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-top: 15px;
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 48px;
+      }
+
+      .btn::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        transform: translate(-50%, -50%);
+        transition:
+          width 0.6s,
+          height 0.6s;
+      }
+
+      .btn:hover::before {
+        width: 200px;
+        height: 200px;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #64748b, #475569);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, var(--success), #059669);
+      }
+
+      .btn-icon {
+        font-size: 1.1rem;
+      }
+
+      /* ============================================ */
+      /* IMPROVED RESULTS SECTION - SIMPLER & ELEGANT */
+      /* ============================================ */
+
+      .result-section {
+        display: none;
+        margin-top: 40px;
+        animation: fadeIn 0.6s ease;
+      }
+
+      .result-section.active {
+        display: block;
+      }
+
+      /* Simple Header */
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+      }
+
+      .result-header h2 {
+        font-size: 1.5rem;
+        color: var(--dark);
+        font-weight: 600;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+      }
+
+      /* Minimalist Info Grid */
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+        margin: 20px 0;
+      }
+
+      .info-item {
+        background: white;
+        padding: 14px 16px;
+        border-radius: 10px;
+        border: 1px solid rgba(226, 232, 240, 0.5);
+        transition: all 0.2s ease;
+      }
+
+      .info-item:hover {
+        border-color: rgba(226, 232, 240, 0.8);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+
+      .info-item.highlight {
+        background: rgba(99, 102, 241, 0.02);
+        border-color: rgba(99, 102, 241, 0.15);
+      }
+
+      .info-item.customer-info {
+        background: rgba(139, 92, 246, 0.02);
+        border-color: rgba(139, 92, 246, 0.15);
+      }
+
+      /* Clean Label */
+      .info-label {
+        font-weight: 500;
+        color: #64748b;
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      /* Simple Input */
+      .info-value input,
+      .info-value select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid rgba(226, 232, 240, 0.6);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        background: white;
+        font-family: "Inter", sans-serif;
+        color: var(--dark);
+      }
+
+      .info-value input:focus,
+      .info-value select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.08);
+        outline: none;
+      }
+
+      /* Clean Section Header */
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 28px 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+      }
+
+      .section-header h3 {
+        color: var(--dark);
+        font-size: 1.15rem;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      /* Simple Badge */
+      .badge {
+        display: inline-flex;
+        padding: 4px 10px;
+        background: var(--customer-color);
+        color: white;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .badge.needs-review {
+        background: #f59e0b;
+      }
+
+      .badge.individual {
+        background: #3b82f6;
+      }
+
+      .badge.business {
+        background: var(--customer-color);
+      }
+
+      /* Clean Table */
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 20px 0;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid rgba(226, 232, 240, 0.6);
+        background: white;
+      }
+
+      thead {
+        background: rgba(248, 250, 252, 0.8);
+      }
+
+      th {
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.85rem;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+        font-size: 0.9rem;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tr:hover td {
+        background: rgba(99, 102, 241, 0.02);
+      }
+
+      table input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid rgba(226, 232, 240, 0.5);
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        background: white;
+        font-family: "Inter", sans-serif;
+        font-size: 0.85rem;
+      }
+
+      table input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.06);
+        outline: none;
+      }
+
+      /* Simple Summary Box */
+      .summary-box {
+        background: rgba(248, 250, 252, 0.6);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 24px;
+        border: 1px solid rgba(226, 232, 240, 0.6);
+      }
+
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+        font-size: 0.95rem;
+        color: var(--dark);
+      }
+
+      .summary-row:last-child {
+        border-bottom: none;
+        font-size: 1.2rem;
+        font-weight: 700;
+        padding-top: 12px;
+        color: var(--primary);
+        border-top: 1px solid rgba(226, 232, 240, 0.6);
+        margin-top: 4px;
+      }
+
+      /* Clean Alert */
+      .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        display: none;
+        line-height: 1.5;
+        font-size: 0.85rem;
+        animation: slideDown 0.3s ease;
+      }
+
+      .alert.show {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .alert-success {
+        background: rgba(16, 185, 129, 0.08);
+        color: #065f46;
+        border-left: 3px solid var(--success);
+      }
+
+      .alert-error {
+        background: rgba(239, 68, 68, 0.08);
+        color: #991b1b;
+        border-left: 3px solid var(--danger);
+      }
+
+      .alert-warning {
+        background: rgba(245, 158, 11, 0.08);
+        color: #92400e;
+        border-left: 3px solid #f59e0b;
+      }
+
+      /* Simple Noise Box */
+      .noise-box {
+        background: rgba(254, 243, 199, 0.2);
+        border: 1px solid rgba(245, 158, 11, 0.15);
+        padding: 14px 16px;
+        border-radius: 8px;
+        margin: 16px 0;
+      }
+
+      .noise-box h4 {
+        color: #92400e;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+      }
+
+      .noise-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .noise-item {
+        background: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        color: #92400e;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+      }
+
+      /* Loading */
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 50px;
+      }
+
+      .loading.active {
+        display: block;
+      }
+
+      .spinner {
+        border: 4px solid rgba(226, 232, 240, 0.6);
+        border-top: 4px solid var(--primary);
+        border-right: 4px solid var(--secondary);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s ease-in-out infinite;
+        margin: 0 auto 20px;
+      }
+
+      .loading p {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--dark);
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .input-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2rem;
+        }
+        .card {
+          padding: 25px;
+        }
+        .info-grid {
+          grid-template-columns: 1fr;
+        }
+        .result-header {
+          flex-direction: column;
+          gap: 15px;
+          text-align: center;
+        }
+        .action-buttons {
+          flex-direction: column;
+          width: 100%;
+        }
+        .btn {
+          width: 100%;
+        }
+        table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+
+      /* Utility Classes */
+      .text-muted {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      .text-primary {
+        color: var(--primary);
+      }
+
+      .font-semibold {
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>💬 Order Recognition System</h1>
+        <p>Nhận diện thông tin khách hàng</p>
+      </header>
+
+      <div class="card">
+        <div id="alertBox"></div>
+
+        <!-- Two Column Input -->
+        <div class="input-grid">
+          <!-- Upload Section -->
+          <div class="input-section">
+            <div class="section-title">
+              <span>📎 Attachment</span>
+            </div>
+            <div
+              class="upload-area"
+              id="uploadArea"
+              onclick="document.getElementById('fileInput').click()"
+            >
+              <div class="upload-icon">📁</div>
+              <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937">
+                Upload Image
+              </div>
+              <div class="text-muted">JPG, PNG, PDF, HTML • Max 10MB</div>
+              <input
+                type="file"
+                id="fileInput"
+                accept=".jpg,.jpeg,.png,.pdf,.html,.htm"
+                onchange="handleFileSelect(event)"
+                style="display: none"
+              />
+              <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+                <label for="modelSelect" style="font-size:0.95rem; color:#374151;">Model:</label>
+                <select id="modelSelect" style="padding:6px 8px; border-radius:6px; border:1px solid #e5e7eb; background:white;">
+                  <option value="gpt-4o" selected>gpt-4o (recommended)</option>
+                  <option value="gpt-4-turbo">gpt-4-turbo</option>
+                  <option value="gpt-4o-mini">gpt-4o-mini</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="imagePreview" class="image-preview">
+              <div class="preview-container">
+                <button
+                  class="remove-image"
+                  onclick="removeImage()"
+                  title="Xóa ảnh"
+                >
+                  ×
+                </button>
+                <img id="previewImg" src="" alt="Preview" />
+              </div>
+              <div class="preview-info">
+                <span id="fileName"></span> • <span id="fileSize"></span>
+              </div>
+            </div>
+
+            <button
+              class="btn"
+              id="processBtn"
+              onclick="processImage()"
+              disabled
+            >
+              <span class="btn-icon">🔍</span>
+              <span>Nhận diện từ ảnh</span>
+            </button>
+          </div>
+
+          <!-- Text Section -->
+          <div class="input-section">
+            <div class="section-title">
+              <span>📝 Text</span>
+            </div>
+            <textarea
+              id="messageText"
+              placeholder="Dán nội dung vào đây...
+
+Ví dụ:
+━━━━━━━━━━━━━━━━━━━━
+Chào shop!
+Tên: Nguyễn Văn A
+SĐT: 0901234567
+Địa chỉ: 123 Nguyễn Huệ, Q1, HCM
+
+Em đặt:
+1. Áo thun trắng - 2 cái
+2. Quần jean - 1 cái
+
+COD nhé!"
+            ></textarea>
+            <button class="btn" onclick="processText()">
+              <span class="btn-icon">🔍</span>
+              <span>Nhận diện từ text</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <p>Đang nhận diện... Vui lòng đợi</p>
+        </div>
+
+        <!-- Results -->
+        <div id="resultSection" class="result-section">
+          <div class="result-header">
+            <h2>✅ Thông tin đã trích xuất</h2>
+            <div class="action-buttons">
+              <button class="btn btn-secondary" onclick="resetForm()">
+                <span class="btn-icon">🔄</span>
+                <span>Làm mới</span>
+              </button>
+              <button class="btn btn-primary" onclick="saveAsJSON()">
+                <span class="btn-icon">📄</span>
+                <span>Lưu JSON</span>
+              </button>
+              <button class="btn btn-success" onclick="saveAsExcel()">
+                <span class="btn-icon">📊</span>
+                <span>Lưu Excel</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Needs Review Warning -->
+          <div id="needsReviewWarning" style="display: none">
+            <div class="alert alert-warning show">
+              <span>⚠️</span>
+              <div>
+                <strong>Cần kiểm tra:</strong>
+                <span id="reviewNotes"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Noise Detected -->
+          <div id="noiseBox" class="noise-box" style="display: none">
+            <h4>
+              <span>🧹</span>
+              <span>Thông tin nhiễu đã lọc:</span>
+            </h4>
+            <div class="noise-list" id="noiseList"></div>
+          </div>
+
+          <div class="section-header">
+            <h3>👤 Thông tin khách hàng</h3>
+            <span class="badge" id="customerBadge">CUSTOMER</span>
+          </div>
+          <div class="info-grid" id="customerInfo"></div>
+
+          <div class="section-header">
+            <h3>📦 Thông tin đơn hàng</h3>
+          </div>
+          <div class="info-grid" id="orderInfo"></div>
+
+          <div class="section-header">
+            <h3>🛍️ Danh sách sản phẩm</h3>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 60px">STT</th>
+                <th>Tên sản phẩm</th>
+                <th style="width: 100px">Số lượng</th>
+                <th style="width: 140px">Đơn giá</th>
+                <th style="width: 140px">Thành tiền</th>
+                <th>Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+
+          <div class="summary-box" id="summaryBox">
+            <div class="summary-row">
+              <span class="font-semibold">Tổng số sản phẩm:</span>
+              <span id="totalItems" class="font-semibold">0</span>
+            </div>
+            <div class="summary-row">
+              <span class="font-semibold text-primary">TỔNG THANH TOÁN:</span>
+              <span id="totalAmount" class="font-semibold text-primary"
+                >0đ</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Giữ nguyên toàn bộ JavaScript logic như cũ
+      const API_URL = window.location.origin;
+      let currentJobId = null;
+      let currentOrderData = null;
+
+      function formatMoney(val) {
+        return new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }).format(val || 0);
+      }
+
+      function showAlert(msg, type) {
+        const box = document.getElementById("alertBox");
+        const formattedMsg = msg.replace(/\n/g, "<br>");
+        box.innerHTML = `<div class="alert alert-${type} show">${formattedMsg}</div>`;
+
+        const timeout = msg.length > 100 ? 7000 : 5000;
+        setTimeout(() => (box.innerHTML = ""), timeout);
+      }
+
+      const uploadArea = document.getElementById("uploadArea");
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+      uploadArea.addEventListener("dragleave", () =>
+        uploadArea.classList.remove("dragover"),
+      );
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+        const files = e.dataTransfer.files;
+        if (files.length) {
+          document.getElementById("fileInput").files = files;
+          handleFileSelect({ target: { files } });
+        }
+      });
+
+      function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 10 * 1024 * 1024) {
+          showAlert("❌ File quá lớn! Vui lòng chọn file dưới 10MB", "error");
+          return;
+        }
+
+        if (file.type.startsWith("image/")) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            document.getElementById("previewImg").src = e.target.result;
+            document.getElementById("fileName").textContent = file.name;
+            document.getElementById("fileSize").textContent = formatFileSize(
+              file.size,
+            );
+            document.getElementById("imagePreview").classList.add("show");
+            document.getElementById("uploadArea").style.display = "none";
+          };
+          reader.readAsDataURL(file);
+        }
+
+        document.getElementById("processBtn").disabled = false;
+        showAlert(`✅ Đã chọn: ${file.name}`, "success");
+      }
+
+      function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + " B";
+        else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        else return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+      }
+
+      function removeImage() {
+        document.getElementById("fileInput").value = "";
+        document.getElementById("imagePreview").classList.remove("show");
+        document.getElementById("uploadArea").style.display = "block";
+        document.getElementById("processBtn").disabled = true;
+        showAlert("🗑️ Đã xóa ảnh", "success");
+      }
+
+      async function processImage() {
+        const file = document.getElementById("fileInput").files[0];
+        if (!file) return showAlert("Chọn file screenshot!", "error");
+
+        document.getElementById("loading").classList.add("active");
+        const form = new FormData();
+        form.append("file", file);
+        // include model override if selected
+        const selectedModel = document.getElementById('modelSelect') ? document.getElementById('modelSelect').value : null;
+        if (selectedModel) form.append('model', selectedModel);
+
+        try {
+          const res = await fetch(`${API_URL}/api/order/upload`, {
+            method: "POST",
+            body: form,
+          });
+
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+
+          const data = await res.json();
+          console.log("API Response:", data);
+          document.getElementById("loading").classList.remove("active");
+
+          if (data.success) {
+            const orderData = data.data;
+            const hasValidData =
+              orderData.customer_name ||
+              orderData.customer_phone ||
+              orderData.business_name ||
+              (orderData.items && orderData.items.length > 0);
+
+            if (!hasValidData) {
+              showAlert(
+                "⚠️ Ảnh không đúng format đơn đặt hàng!\n\nVui lòng upload ảnh screenshot tin nhắn đặt hàng có chứa:\n• Tên khách hàng\n• Số điện thoại\n• Sản phẩm và số lượng",
+                "warning",
+              );
+              return;
+            }
+
+            currentJobId = data.job_id;
+            currentOrderData = data.data;
+            displayResults(data.data);
+            showAlert("✅ Nhận diện thành công!", "success");
+          } else {
+            console.error("API Error:", data);
+            const errorMsg = data.error_message || "Unknown error";
+
+            if (
+              errorMsg.includes("parse") ||
+              errorMsg.includes("JSON") ||
+              errorMsg.includes("format")
+            ) {
+              showAlert(
+                "⚠️ Ảnh không đúng format đơn đặt hàng!\n\nHãy đảm bảo ảnh chứa thông tin đơn hàng rõ ràng.",
+                "warning",
+              );
+            } else {
+              showAlert("❌ Lỗi: " + errorMsg, "error");
+            }
+          }
+        } catch (err) {
+          console.error("Request failed:", err);
+          document.getElementById("loading").classList.remove("active");
+          showAlert(
+            "❌ Không thể xử lý ảnh!\n\nKiểm tra lại:\n• File có phải là ảnh không?\n• Ảnh có chứa thông tin đơn hàng?\n• Kết nối mạng ổn định?",
+            "error",
+          );
+        }
+      }
+
+      async function processText() {
+        const text = document.getElementById("messageText").value;
+        if (!text.trim()) return showAlert("Nhập nội dung tin nhắn!", "error");
+
+        document.getElementById("loading").classList.add("active");
+        const form = new FormData();
+        form.append("message_text", text);
+        const selectedModelText = document.getElementById('modelSelect') ? document.getElementById('modelSelect').value : null;
+        if (selectedModelText) form.append('model', selectedModelText);
+
+        try {
+          const res = await fetch(`${API_URL}/api/order/text`, {
+            method: "POST",
+            body: form,
+          });
+
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+
+          const data = await res.json();
+          console.log("API Response:", data);
+          document.getElementById("loading").classList.remove("active");
+
+          if (data.success) {
+            const orderData = data.data;
+            const hasValidData =
+              orderData.customer_name ||
+              orderData.customer_phone ||
+              orderData.business_name ||
+              (orderData.items && orderData.items.length > 0);
+
+            if (!hasValidData) {
+              showAlert(
+                "⚠️ Text không đúng format đơn đặt hàng!\n\nVui lòng nhập nội dung tin nhắn có chứa:\n• Tên khách hàng\n• Số điện thoại\n• Sản phẩm và số lượng",
+                "warning",
+              );
+              return;
+            }
+
+            currentJobId = data.job_id;
+            currentOrderData = data.data;
+            displayResults(data.data);
+            showAlert("✅ Nhận diện thành công!", "success");
+          } else {
+            console.error("API Error:", data);
+            const errorMsg = data.error_message || "Unknown error";
+
+            if (
+              errorMsg.includes("parse") ||
+              errorMsg.includes("JSON") ||
+              errorMsg.includes("format")
+            ) {
+              showAlert(
+                "⚠️ Text không đúng format đơn đặt hàng!\n\nHãy đảm bảo text chứa thông tin đơn hàng rõ ràng.",
+                "warning",
+              );
+            } else {
+              showAlert("❌ Lỗi: " + errorMsg, "error");
+            }
+          }
+        } catch (err) {
+          console.error("Request failed:", err);
+          document.getElementById("loading").classList.remove("active");
+          showAlert(
+            "❌ Không thể xử lý text!\n\nKiểm tra lại:\n• Text có chứa thông tin đơn hàng?\n• Kết nối mạng ổn định?",
+            "error",
+          );
+        }
+      }
+
+      function displayResults(data) {
+        if (!data || typeof data !== "object") {
+          console.error("Invalid data:", data);
+          showAlert("❌ Dữ liệu không hợp lệ", "error");
+          return;
+        }
+
+        // Needs Review Warning
+        if (data.needs_review) {
+          document.getElementById("needsReviewWarning").style.display = "block";
+          document.getElementById("reviewNotes").textContent =
+            data.review_notes || "Thiếu một số thông tin quan trọng";
+          document
+            .getElementById("customerBadge")
+            .classList.add("needs-review");
+        } else {
+          document.getElementById("needsReviewWarning").style.display = "none";
+          document
+            .getElementById("customerBadge")
+            .classList.remove("needs-review");
+        }
+
+        // Customer Type Badge
+        const customerBadge = document.getElementById("customerBadge");
+        customerBadge.classList.remove("individual", "business");
+        if (data.customer_type === "individual") {
+          customerBadge.textContent = "CÁ NHÂN";
+          customerBadge.classList.add("individual");
+        } else if (data.customer_type === "business") {
+          customerBadge.textContent = "DOANH NGHIỆP";
+          customerBadge.classList.add("business");
+        } else {
+          customerBadge.textContent = "CUSTOMER";
+        }
+
+        // Noise Detected
+        if (data.noise_detected && data.noise_detected.length > 0) {
+          document.getElementById("noiseBox").style.display = "block";
+          const noiseList = document.getElementById("noiseList");
+          noiseList.innerHTML = "";
+          data.noise_detected.forEach((noise) => {
+            noiseList.innerHTML += `<span class="noise-item">${noise}</span>`;
+          });
+        } else {
+          document.getElementById("noiseBox").style.display = "none";
+        }
+
+        // Thông tin khách hàng
+        let customerHTML = "";
+
+        if (data.customer_type === "business") {
+          customerHTML += `
+            <div class="info-item customer-info highlight">
+              <div class="info-label">🏢 Tên tổ chức</div>
+              <div class="info-value"><input type="text" value="${data.business_name ?? ""}" placeholder="Tên công ty/Hộ kinh doanh"></div>
+            </div>
+            <div class="info-item customer-info">
+              <div class="info-label">👤 Người liên hệ</div>
+              <div class="info-value"><input type="text" value="${data.customer_name ?? ""}" placeholder="Tên người liên hệ"></div>
+            </div>
+            <div class="info-item customer-info">
+              <div class="info-label">🏢 Địa chỉ công ty</div>
+              <div class="info-value"><input type="text" value="${data.business_address ?? ""}" placeholder="Địa chỉ trụ sở công ty"></div>
+            </div>
+          `;
+        } else {
+          customerHTML += `
+            <div class="info-item customer-info highlight">
+              <div class="info-label">👤 Tên khách hàng</div>
+              <div class="info-value"><input type="text" value="${data.customer_name ?? ""}" placeholder="Họ và tên"></div>
+            </div>
+          `;
+        }
+
+        customerHTML += `
+          <div class="info-item customer-info ${data.customer_tax_code ? "highlight" : ""}">
+            <div class="info-label">🔢 Mã số thuế</div>
+            <div class="info-value"><input type="text" value="${data.customer_tax_code ?? ""}" placeholder="MST (nếu có)"></div>
+          </div>
+          <div class="info-item customer-info highlight">
+            <div class="info-label">📞 Số điện thoại</div>
+            <div class="info-value"><input type="text" value="${data.customer_phone ?? ""}" placeholder="Số ĐT"></div>
+          </div>
+          <div class="info-item customer-info">
+            <div class="info-label">📍 Địa chỉ giao hàng</div>
+            <div class="info-value"><input type="text" value="${data.customer_address ?? ""}" placeholder="Địa chỉ"></div>
+          </div>
+          <div class="info-item customer-info">
+            <div class="info-label">✉️ Email</div>
+            <div class="info-value"><input type="email" value="${data.customer_email ?? ""}" placeholder="Email"></div>
+          </div>
+        `;
+
+        document.getElementById("customerInfo").innerHTML = customerHTML;
+
+        // Thông tin đơn hàng
+        document.getElementById("orderInfo").innerHTML = `
+          <div class="info-item">
+            <div class="info-label">🔖 Mã đơn hàng</div>
+            <div class="info-value"><input type="text" value="${data.order_id ?? ""}" placeholder="Tự động tạo"></div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">📅 Ngày đặt</div>
+            <div class="info-value"><input type="date" value="${data.order_date ?? ""}"></div>
+          </div>
+          <div class="info-item highlight">
+            <div class="info-label">💳 Phương thức thanh toán</div>
+            <div class="info-value"><input type="text" value="${data.payment_method ?? ""}" placeholder="COD/CK"></div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">📝 Ghi chú</div>
+            <div class="info-value"><input type="text" value="${data.notes ?? ""}" placeholder="Ghi chú"></div>
+          </div>
+        `;
+
+        // Hiển thị items
+        const tbody = document.getElementById("itemsBody");
+        tbody.innerHTML = "";
+        const items = data.items || [];
+
+        if (items.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 30px; color: #6b7280;">
+                Không có sản phẩm
+              </td>
+            </tr>
+          `;
+        } else {
+          items.forEach((item, i) => {
+            tbody.innerHTML += `
+              <tr>
+                <td style="text-align:center; font-weight:600; color: #64748b;">${item.line_number || i + 1}</td>
+                <td><input type="text" value="${item.product_name ?? ""}"></td>
+                <td><input type="number" value="${item.quantity ?? 0}" style="text-align:center;"></td>
+                <td style="text-align:right; color: #059669; font-weight: 500;">${item.unit_price ? formatMoney(item.unit_price) : "-"}</td>
+                <td style="text-align:right; font-weight:600; color: #047857;">${item.total_price ? formatMoney(item.total_price) : "-"}</td>
+                <td><input type="text" value="${item.notes ?? ""}" placeholder="Ghi chú"></td>
+              </tr>
+            `;
+          });
+        }
+
+        // Summary
+        const totalItems = items.reduce(
+          (sum, item) => sum + (parseFloat(item.quantity) || 0),
+          0,
+        );
+        document.getElementById("totalItems").textContent = totalItems;
+        document.getElementById("totalAmount").textContent = formatMoney(
+          data.total_amount,
+        );
+
+        // Show results section
+        document.getElementById("resultSection").classList.add("active");
+        document
+          .getElementById("resultSection")
+          .scrollIntoView({ behavior: "smooth" });
+      }
+
+      async function saveAsJSON() {
+        if (!currentJobId) return showAlert("Chưa có dữ liệu để lưu!", "error");
+
+        try {
+          showAlert("⏳ Đang tạo file JSON...", "info");
+
+          const response = await fetch(
+            `/api/export/order/${currentJobId}/json`,
+            {
+              method: "POST",
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error("Lỗi export JSON");
+          }
+
+          // Download JSON
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `order_${currentJobId}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          showAlert("✅ Đã lưu file JSON thành công!", "success");
+        } catch (error) {
+          console.error("Save JSON error:", error);
+          showAlert("❌ Lỗi khi lưu JSON: " + error.message, "error");
+        }
+      }
+
+      async function saveAsExcel() {
+        if (!currentJobId) return showAlert("Chưa có dữ liệu để lưu!", "error");
+
+        try {
+          showAlert("⏳ Đang tạo file Excel...", "info");
+
+          const response = await fetch(
+            `/api/export/order/${currentJobId}/excel`,
+            {
+              method: "POST",
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error("Lỗi export Excel");
+          }
+
+          // Download Excel
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `order_${currentJobId}.xlsx`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          showAlert("✅ Đã lưu file Excel thành công!", "success");
+        } catch (error) {
+          console.error("Save Excel error:", error);
+          showAlert("❌ Lỗi khi lưu Excel: " + error.message, "error");
+        }
+      }
+
+      function resetForm() {
+        document.getElementById("fileInput").value = "";
+        document.getElementById("messageText").value = "";
+        document.getElementById("processBtn").disabled = true;
+        document.getElementById("resultSection").classList.remove("active");
+        document.getElementById("imagePreview").classList.remove("show");
+        document.getElementById("uploadArea").style.display = "block";
+        currentJobId = null;
+        currentOrderData = null;
+        showAlert("✨ Đã làm mới", "success");
+      }
+    </script>
+  </body>
+</html>

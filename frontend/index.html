@@ -1,11 +1,11 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nhận diện đơn hàng</title>
+    <title>Order Recognition - AMIS</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -14,623 +14,613 @@
         padding: 0;
         box-sizing: border-box;
       }
-
       :root {
         --primary: #6366f1;
-        --secondary: #4f46e5;
+        --primary-dark: #4f46e5;
+        --primary-light: #818cf8;
         --success: #10b981;
+        --success-dark: #059669;
         --danger: #ef4444;
-        --dark: #1e293b;
-        --light: #f8fafc;
+        --warning: #f59e0b;
+        --dark: #0f172a;
+        --dark2: #1e293b;
+        --gray: #64748b;
+        --gray-light: #94a3b8;
         --border: #e2e8f0;
-        --customer-color: #8b5cf6;
-        --bg-gradient-1: #667eea;
-        --bg-gradient-2: #764ba2;
-        --card-bg: rgba(255, 255, 255, 0.95);
-        --surface: rgba(255, 255, 255, 0.7);
+        --bg: #f1f5f9;
+        --card: #ffffff;
+        --surface: #f8fafc;
+        --radius: 16px;
+        --radius-sm: 10px;
+        --radius-xs: 6px;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.1);
       }
-
       body {
-        font-family:
-          "Inter",
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          sans-serif;
+        font-family: "Inter", system-ui, sans-serif;
+        background: var(--bg);
+        min-height: 100vh;
+        color: var(--dark);
+      }
+      .topbar {
         background: linear-gradient(
           135deg,
-          var(--bg-gradient-1) 0%,
-          var(--bg-gradient-2) 100%
+          #4f46e5 0%,
+          #7c3aed 50%,
+          #6366f1 100%
         );
-        min-height: 100vh;
-        padding: 20px;
+        padding: 20px 0;
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
       }
-
-      .container {
-        max-width: 1600px;
+      .topbar-inner {
+        max-width: 1400px;
         margin: 0 auto;
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
       }
-
-      header {
-        text-align: center;
-        color: white;
-        margin-bottom: 40px;
-        animation: fadeIn 0.6s;
-      }
-
-      h1 {
-        font-size: 3rem;
-        margin-bottom: 12px;
-        font-weight: 700;
+      .topbar h1 {
+        font-size: 1.6rem;
+        font-weight: 800;
         letter-spacing: -0.5px;
-        background: linear-gradient(135deg, #fff 0%, #f0f0ff 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
-
-      header p {
-        font-size: 1.1rem;
+      .topbar h1 .logo {
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .model-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        padding: 8px 16px;
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.2s;
+      }
+      .model-pill:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+      .model-pill label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         opacity: 0.9;
-        font-weight: 500;
-        color: rgba(255, 255, 255, 0.9);
+        white-space: nowrap;
       }
-
-      .card {
-        background: var(--card-bg);
-        backdrop-filter: blur(20px);
-        border-radius: 24px;
-        padding: 35px;
-        box-shadow:
-          0 8px 32px rgba(0, 0, 0, 0.1),
-          0 1px 2px rgba(255, 255, 255, 0.1) inset;
-        animation: slideUp 0.6s;
-        position: relative;
+      .model-pill select {
+        background: rgba(255, 255, 255, 0.2);
         border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        min-width: 160px;
       }
-
-      /* Two Column Layout */
+      .model-pill select option {
+        color: #1e293b;
+        background: #fff;
+      }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 28px 24px;
+      }
+      .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 28px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+      }
       .input-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 24px;
-        margin-bottom: 30px;
+        margin-bottom: 24px;
       }
-
       .input-section {
-        background: var(--surface);
-        backdrop-filter: blur(10px);
+        background: var(--card);
+        border-radius: var(--radius);
         padding: 28px;
-        border-radius: 20px;
-        border: 1px solid rgba(226, 232, 240, 0.5);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        transition: all 0.3s ease;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
       }
-
-      .input-section:hover {
-        background: rgba(255, 255, 255, 0.85);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      }
-
       .section-title {
-        font-size: 1.25rem;
-        font-weight: 600;
+        font-size: 1.1rem;
+        font-weight: 700;
         color: var(--dark);
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         gap: 10px;
       }
-
-      /* Upload Area - Refined */
+      .section-title .icon {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+      }
+      .section-title .icon.upload-bg {
+        background: rgba(99, 102, 241, 0.1);
+        color: var(--primary);
+      }
+      .section-title .icon.text-bg {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+      }
       .upload-area {
-        border: 2px dashed rgba(99, 102, 241, 0.2);
-        border-radius: 16px;
-        padding: 35px 20px;
+        border: 2px dashed var(--border);
+        border-radius: var(--radius-sm);
+        padding: 40px 20px;
         text-align: center;
         cursor: pointer;
-        transition: all 0.3s ease;
-        background: rgba(255, 255, 255, 0.4);
-        position: relative;
-        overflow: hidden;
+        transition: all 0.25s;
+        background: var(--surface);
       }
-
       .upload-area:hover {
-        background: rgba(99, 102, 241, 0.05);
-        border-color: rgba(99, 102, 241, 0.4);
-        transform: translateY(-1px);
+        border-color: var(--primary-light);
+        background: rgba(99, 102, 241, 0.03);
       }
-
       .upload-area.dragover {
         border-color: var(--primary);
-        background: rgba(99, 102, 241, 0.08);
+        background: rgba(99, 102, 241, 0.06);
       }
-
-      .upload-icon {
+      .upload-area .big-icon {
         font-size: 2.8rem;
         margin-bottom: 12px;
-        opacity: 0.8;
+        opacity: 0.7;
       }
-
-      /* Image Preview - Minimalist */
+      .upload-area .upload-title {
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 4px;
+      }
+      .upload-area .upload-sub {
+        font-size: 0.85rem;
+        color: var(--gray);
+      }
       .image-preview {
         display: none;
         margin-top: 20px;
         text-align: center;
-        animation: fadeIn 0.3s ease;
+        animation: fadeIn 0.3s;
       }
-
       .image-preview.show {
         display: block;
       }
-
       .preview-container {
         position: relative;
         display: inline-block;
         max-width: 100%;
-        border-radius: 12px;
+        border-radius: var(--radius-sm);
         overflow: hidden;
-        background: white;
-        transition: all 0.3s ease;
-        border: 1px solid rgba(226, 232, 240, 0.8);
+        background: var(--surface);
+        border: 1px solid var(--border);
       }
-
       .preview-container img {
         max-width: 100%;
-        max-height: 280px;
+        max-height: 260px;
         display: block;
-        border-radius: 10px;
         object-fit: contain;
       }
-
       .preview-info {
-        margin-top: 12px;
-        padding: 10px 16px;
-        background: rgba(243, 244, 246, 0.6);
-        border-radius: 10px;
-        font-size: 0.85rem;
-        color: #6b7280;
+        margin-top: 10px;
+        padding: 8px 14px;
+        background: var(--surface);
+        border-radius: var(--radius-xs);
+        font-size: 0.82rem;
+        color: var(--gray);
         display: inline-block;
       }
-
-      /* Minimal Close Button */
       .remove-image {
         position: absolute;
-        top: 12px;
-        right: 12px;
+        top: 10px;
+        right: 10px;
         background: rgba(255, 255, 255, 0.95);
-        color: #6b7280;
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        width: 32px;
-        height: 32px;
+        color: var(--gray);
+        border: 1px solid var(--border);
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s ease;
+        font-size: 1.1rem;
         z-index: 10;
-        font-size: 1.2rem;
-        font-weight: 300;
-        opacity: 0.9;
+        transition: all 0.2s;
       }
-
       .remove-image:hover {
         background: rgba(239, 68, 68, 0.1);
         color: var(--danger);
         border-color: rgba(239, 68, 68, 0.3);
-        transform: scale(1.05);
       }
-
-      /* Text Area */
       textarea {
         width: 100%;
-        min-height: 280px;
-        padding: 18px;
-        border: 1.5px solid rgba(226, 232, 240, 0.8);
-        border-radius: 14px;
+        min-height: 260px;
+        padding: 16px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
         font-family: "Inter", sans-serif;
-        font-size: 14px;
+        font-size: 0.9rem;
         resize: vertical;
-        transition: all 0.3s ease;
+        transition: all 0.2s;
         line-height: 1.7;
-        background: rgba(248, 250, 252, 0.5);
+        background: var(--surface);
+        color: var(--dark);
       }
-
       textarea:focus {
         outline: none;
         border-color: var(--primary);
-        background: white;
+        background: #fff;
         box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
       }
-
-      /* Buttons */
+      textarea::placeholder {
+        color: var(--gray-light);
+      }
       .btn {
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: white;
-        padding: 14px 28px;
-        border: none;
-        border-radius: 12px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        margin-top: 15px;
-        position: relative;
-        overflow: hidden;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        min-height: 48px;
+        padding: 12px 24px;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: "Inter", sans-serif;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-height: 46px;
       }
-
-      .btn::before {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
-        transform: translate(-50%, -50%);
-        transition:
-          width 0.6s,
-          height 0.6s;
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
       }
-
-      .btn:hover::before {
-        width: 200px;
-        height: 200px;
+      .btn-primary:hover {
+        background: var(--primary-dark);
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+        transform: translateY(-1px);
       }
-
-      .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
-      }
-
-      .btn:active {
-        transform: translateY(0);
-      }
-
-      .btn-secondary {
-        background: linear-gradient(135deg, #64748b, #475569);
-      }
-
       .btn-success {
-        background: linear-gradient(135deg, var(--success), #059669);
+        background: var(--success);
+        color: #fff;
       }
-
-      .btn-icon {
-        font-size: 1.1rem;
+      .btn-success:hover {
+        background: var(--success-dark);
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        transform: translateY(-1px);
       }
-
-      /* ============================================ */
-      /* IMPROVED RESULTS SECTION - SIMPLER & ELEGANT */
-      /* ============================================ */
-
+      .btn-outline {
+        background: transparent;
+        color: var(--gray);
+        border: 1.5px solid var(--border);
+      }
+      .btn-outline:hover {
+        border-color: var(--gray-light);
+        background: var(--surface);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      .btn .icon {
+        font-size: 1.05rem;
+      }
       .result-section {
         display: none;
-        margin-top: 40px;
-        animation: fadeIn 0.6s ease;
+        animation: slideUp 0.5s;
       }
-
       .result-section.active {
         display: block;
       }
-
-      /* Simple Header */
       .result-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+        flex-wrap: wrap;
+        gap: 12px;
       }
-
       .result-header h2 {
-        font-size: 1.5rem;
+        font-size: 1.35rem;
+        font-weight: 700;
         color: var(--dark);
-        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
-
       .action-buttons {
         display: flex;
-        gap: 10px;
+        gap: 8px;
+        flex-wrap: wrap;
       }
-
-      /* Minimalist Info Grid */
       .info-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 12px;
-        margin: 20px 0;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 10px;
+        margin: 16px 0;
       }
-
       .info-item {
-        background: white;
-        padding: 14px 16px;
-        border-radius: 10px;
-        border: 1px solid rgba(226, 232, 240, 0.5);
-        transition: all 0.2s ease;
+        background: var(--surface);
+        padding: 12px 14px;
+        border-radius: var(--radius-xs);
+        border: 1px solid var(--border);
+        transition: all 0.2s;
       }
-
       .info-item:hover {
-        border-color: rgba(226, 232, 240, 0.8);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       }
-
       .info-item.highlight {
-        background: rgba(99, 102, 241, 0.02);
+        background: rgba(99, 102, 241, 0.03);
         border-color: rgba(99, 102, 241, 0.15);
       }
-
       .info-item.customer-info {
         background: rgba(139, 92, 246, 0.02);
-        border-color: rgba(139, 92, 246, 0.15);
+        border-color: rgba(139, 92, 246, 0.12);
       }
-
-      /* Clean Label */
       .info-label {
-        font-weight: 500;
-        color: #64748b;
-        font-size: 0.8rem;
-        margin-bottom: 6px;
+        font-weight: 600;
+        color: var(--gray);
+        font-size: 0.75rem;
+        margin-bottom: 5px;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.4px;
       }
-
-      /* Simple Input */
       .info-value input,
       .info-value select {
         width: 100%;
-        padding: 10px 12px;
-        border: 1px solid rgba(226, 232, 240, 0.6);
-        border-radius: 8px;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        background: white;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xs);
+        font-size: 0.88rem;
+        background: #fff;
         font-family: "Inter", sans-serif;
         color: var(--dark);
+        transition: all 0.2s;
       }
-
       .info-value input:focus,
       .info-value select:focus {
         border-color: var(--primary);
         box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.08);
         outline: none;
       }
-
-      /* Clean Section Header */
       .section-header {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin: 28px 0 16px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+        margin: 28px 0 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
       }
-
       .section-header h3 {
         color: var(--dark);
-        font-size: 1.15rem;
-        margin: 0;
-        font-weight: 600;
+        font-size: 1.05rem;
+        font-weight: 700;
       }
-
-      /* Simple Badge */
       .badge {
         display: inline-flex;
-        padding: 4px 10px;
-        background: var(--customer-color);
-        color: white;
-        border-radius: 6px;
+        padding: 3px 10px;
+        border-radius: var(--radius-xs);
         font-size: 0.7rem;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.3px;
         align-items: center;
         gap: 4px;
+        background: var(--primary);
+        color: #fff;
       }
-
       .badge.needs-review {
-        background: #f59e0b;
+        background: var(--warning);
       }
-
       .badge.individual {
         background: #3b82f6;
       }
-
       .badge.business {
-        background: var(--customer-color);
+        background: #8b5cf6;
       }
-
-      /* Clean Table */
       table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        margin: 20px 0;
-        border-radius: 10px;
+        margin: 16px 0;
+        border-radius: var(--radius-sm);
         overflow: hidden;
-        border: 1px solid rgba(226, 232, 240, 0.6);
-        background: white;
+        border: 1px solid var(--border);
+        background: #fff;
       }
-
       thead {
-        background: rgba(248, 250, 252, 0.8);
+        background: var(--surface);
       }
-
       th {
-        padding: 12px 14px;
+        padding: 11px 12px;
         text-align: left;
-        font-weight: 600;
-        color: #64748b;
-        font-size: 0.85rem;
-        border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+        font-weight: 700;
+        color: var(--gray);
+        font-size: 0.78rem;
+        border-bottom: 1px solid var(--border);
         text-transform: uppercase;
         letter-spacing: 0.3px;
       }
-
       td {
-        padding: 12px 14px;
-        border-bottom: 1px solid rgba(226, 232, 240, 0.3);
-        font-size: 0.9rem;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+        font-size: 0.88rem;
       }
-
       tbody tr:last-child td {
         border-bottom: none;
       }
-
       tr:hover td {
-        background: rgba(99, 102, 241, 0.02);
+        background: rgba(99, 102, 241, 0.015);
       }
-
       table input {
         width: 100%;
-        padding: 8px 10px;
+        padding: 7px 8px;
         border: 1px solid rgba(226, 232, 240, 0.5);
-        border-radius: 6px;
-        transition: all 0.2s ease;
-        background: white;
+        border-radius: var(--radius-xs);
         font-family: "Inter", sans-serif;
-        font-size: 0.85rem;
+        font-size: 0.84rem;
+        background: #fff;
+        transition: all 0.2s;
       }
-
       table input:focus {
         border-color: var(--primary);
         box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.06);
         outline: none;
       }
-
-      /* Simple Summary Box */
-      .summary-box {
-        background: rgba(248, 250, 252, 0.6);
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 24px;
-        border: 1px solid rgba(226, 232, 240, 0.6);
+      .text-right {
+        text-align: right;
       }
-
+      .price-cell {
+        text-align: right;
+        font-weight: 600;
+        color: #047857;
+        font-variant-numeric: tabular-nums;
+      }
+      .summary-box {
+        background: var(--surface);
+        padding: 18px 20px;
+        border-radius: var(--radius-sm);
+        margin-top: 20px;
+        border: 1px solid var(--border);
+      }
       .summary-row {
         display: flex;
         justify-content: space-between;
-        padding: 10px 0;
+        padding: 8px 0;
         border-bottom: 1px solid rgba(226, 232, 240, 0.4);
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         color: var(--dark);
       }
-
       .summary-row:last-child {
         border-bottom: none;
-        font-size: 1.2rem;
-        font-weight: 700;
+        font-size: 1.15rem;
+        font-weight: 800;
         padding-top: 12px;
         color: var(--primary);
-        border-top: 1px solid rgba(226, 232, 240, 0.6);
+        border-top: 1.5px solid var(--border);
         margin-top: 4px;
       }
-
-      /* Clean Alert */
       .alert {
         padding: 12px 16px;
-        border-radius: 8px;
-        margin-bottom: 16px;
+        border-radius: var(--radius-xs);
+        margin-bottom: 14px;
         display: none;
         line-height: 1.5;
         font-size: 0.85rem;
-        animation: slideDown 0.3s ease;
+        animation: slideDown 0.3s;
       }
-
       .alert.show {
         display: flex;
         align-items: center;
         gap: 10px;
       }
-
       .alert-success {
         background: rgba(16, 185, 129, 0.08);
         color: #065f46;
         border-left: 3px solid var(--success);
       }
-
       .alert-error {
         background: rgba(239, 68, 68, 0.08);
         color: #991b1b;
         border-left: 3px solid var(--danger);
       }
-
       .alert-warning {
         background: rgba(245, 158, 11, 0.08);
         color: #92400e;
-        border-left: 3px solid #f59e0b;
+        border-left: 3px solid var(--warning);
       }
-
-      /* Simple Noise Box */
+      .alert-info {
+        background: rgba(99, 102, 241, 0.08);
+        color: #3730a3;
+        border-left: 3px solid var(--primary);
+      }
       .noise-box {
-        background: rgba(254, 243, 199, 0.2);
+        background: rgba(254, 243, 199, 0.15);
         border: 1px solid rgba(245, 158, 11, 0.15);
-        padding: 14px 16px;
-        border-radius: 8px;
-        margin: 16px 0;
+        padding: 12px 16px;
+        border-radius: var(--radius-xs);
+        margin: 14px 0;
       }
-
       .noise-box h4 {
         color: #92400e;
-        margin-bottom: 10px;
-        font-size: 0.85rem;
+        margin-bottom: 8px;
+        font-size: 0.82rem;
         display: flex;
         align-items: center;
         gap: 6px;
-        font-weight: 600;
       }
-
       .noise-list {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 5px;
       }
-
       .noise-item {
-        background: white;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 0.8rem;
+        background: #fff;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.78rem;
         color: #92400e;
         border: 1px solid rgba(245, 158, 11, 0.2);
       }
-
-      /* Loading */
       .loading {
         display: none;
         text-align: center;
         padding: 50px;
       }
-
       .loading.active {
         display: block;
       }
-
       .spinner {
-        border: 4px solid rgba(226, 232, 240, 0.6);
+        border: 4px solid var(--border);
         border-top: 4px solid var(--primary);
-        border-right: 4px solid var(--secondary);
+        border-right: 4px solid var(--primary-dark);
         border-radius: 50%;
-        width: 60px;
-        height: 60px;
-        animation: spin 1s ease-in-out infinite;
-        margin: 0 auto 20px;
+        width: 52px;
+        height: 52px;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 18px;
       }
-
       .loading p {
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
         color: var(--dark);
         animation: pulse 1.5s ease-in-out infinite;
       }
-
-      /* Animations */
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -639,268 +629,217 @@
           opacity: 1;
         }
       }
-
       @keyframes slideUp {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(16px);
         }
         to {
           opacity: 1;
           transform: translateY(0);
         }
       }
-
       @keyframes slideDown {
         from {
           opacity: 0;
-          transform: translateY(-10px);
+          transform: translateY(-8px);
         }
         to {
           opacity: 1;
           transform: translateY(0);
         }
       }
-
       @keyframes spin {
         0% {
-          transform: rotate(0deg);
+          transform: rotate(0);
         }
         100% {
           transform: rotate(360deg);
         }
       }
-
       @keyframes pulse {
         0%,
         100% {
           opacity: 1;
         }
         50% {
-          opacity: 0.7;
+          opacity: 0.6;
         }
       }
-
-      /* Responsive */
-      @media (max-width: 1024px) {
+      @media (max-width: 900px) {
         .input-grid {
           grid-template-columns: 1fr;
         }
-      }
-
-      @media (max-width: 768px) {
-        h1 {
-          font-size: 2rem;
-        }
-        .card {
-          padding: 25px;
-        }
-        .info-grid {
-          grid-template-columns: 1fr;
+        .topbar-inner {
+          flex-direction: column;
+          text-align: center;
         }
         .result-header {
           flex-direction: column;
-          gap: 15px;
           text-align: center;
         }
         .action-buttons {
-          flex-direction: column;
+          justify-content: center;
           width: 100%;
         }
-        .btn {
-          width: 100%;
+        .info-grid {
+          grid-template-columns: 1fr;
         }
         table {
           display: block;
           overflow-x: auto;
         }
       }
-
-      /* Utility Classes */
-      .text-muted {
-        color: #6b7280;
-        font-size: 0.9rem;
-      }
-
-      .text-primary {
-        color: var(--primary);
-      }
-
-      .font-semibold {
-        font-weight: 600;
-      }
     </style>
   </head>
   <body>
+    <div class="topbar">
+      <div class="topbar-inner">
+        <h1><span class="logo">&#128203;</span>Order Recognition</h1>
+        <div class="topbar-right">
+          <div class="model-pill">
+            <label for="modelSelect">&#129302; Model</label>
+            <select id="modelSelect">
+              <option value="gpt-4o" selected>GPT-4o (recommended)</option>
+              <option value="gpt-4o-mini">GPT-4o Mini (fast)</option>
+              <option value="gpt-4-turbo">GPT-4 Turbo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="container">
-      <header>
-        <h1>💬 Order Recognition System</h1>
-        <p>Nhận diện thông tin khách hàng</p>
-      </header>
-
-      <div class="card">
-        <div id="alertBox"></div>
-
-        <!-- Two Column Input -->
-        <div class="input-grid">
-          <!-- Upload Section -->
-          <div class="input-section">
-            <div class="section-title">
-              <span>📎 Attachment</span>
-            </div>
-            <div
-              class="upload-area"
-              id="uploadArea"
-              onclick="document.getElementById('fileInput').click()"
-            >
-              <div class="upload-icon">📁</div>
-              <div style="font-weight: 600; margin-bottom: 8px; color: #1f2937">
-                Upload Image
-              </div>
-              <div class="text-muted">JPG, PNG, WebP • Max 10MB</div>
-              <input
-                type="file"
-                id="fileInput"
-                accept=".jpg,.jpeg,.png,.webp"
-                onchange="handleFileSelect(event)"
-                style="display: none"
-              />
-            </div>
-
-            <div id="imagePreview" class="image-preview">
-              <div class="preview-container">
-                <button
-                  class="remove-image"
-                  onclick="removeImage()"
-                  title="Xóa ảnh"
-                >
-                  ×
-                </button>
-                <img id="previewImg" src="" alt="Preview" />
-              </div>
-              <div class="preview-info">
-                <span id="fileName"></span> • <span id="fileSize"></span>
-              </div>
-            </div>
-
-            <button
-              class="btn"
-              id="processBtn"
-              onclick="processImage()"
-              disabled
-            >
-              <span class="btn-icon">🔍</span>
-              <span>Nhận diện từ ảnh</span>
-            </button>
+      <div id="alertBox"></div>
+      <div class="input-grid">
+        <div class="input-section">
+          <div class="section-title">
+            <span class="icon upload-bg">&#128206;</span>Upload File
           </div>
-
-          <!-- Text Section -->
-          <div class="input-section">
-            <div class="section-title">
-              <span>📝 Text</span>
+          <div
+            class="upload-area"
+            id="uploadArea"
+            onclick="document.getElementById('fileInput').click()"
+          >
+            <div class="big-icon">&#128193;</div>
+            <div class="upload-title">Kéo thả hoặc nhấn để chọn file</div>
+            <div class="upload-sub">
+              JPG, PNG, PDF, HTML &bull; Tối đa 10 MB
             </div>
-            <textarea
-              id="messageText"
-              placeholder="Dán nội dung vào đây...
-
-Ví dụ:
-━━━━━━━━━━━━━━━━━━━━
-Chào shop!
-Tên: Nguyễn Văn A
-SĐT: 0901234567
-Địa chỉ: 123 Nguyễn Huệ, Q1, HCM
-
-Em đặt:
-1. Áo thun trắng - 2 cái
-2. Quần jean - 1 cái
-
-COD nhé!"
-            ></textarea>
-            <button class="btn" onclick="processText()">
-              <span class="btn-icon">🔍</span>
-              <span>Nhận diện từ text</span>
-            </button>
+            <input
+              type="file"
+              id="fileInput"
+              accept=".jpg,.jpeg,.png,.pdf,.html,.htm"
+              onchange="handleFileSelect(event)"
+              style="display: none"
+            />
           </div>
+          <div id="imagePreview" class="image-preview">
+            <div class="preview-container">
+              <button class="remove-image" onclick="removeImage()" title="Xóa">
+                &times;
+              </button>
+              <img id="previewImg" src="" alt="Preview" />
+            </div>
+            <div class="preview-info">
+              <span id="fileName"></span> - <span id="fileSize"></span>
+            </div>
+          </div>
+          <button
+            class="btn btn-primary"
+            id="processBtn"
+            onclick="processImage()"
+            disabled
+            style="margin-top: 16px; width: 100%"
+          >
+            <span class="icon">&#128269;</span> Nhận diện từ file
+          </button>
         </div>
-
-        <!-- Loading -->
-        <div id="loading" class="loading">
-          <div class="spinner"></div>
-          <p>Đang nhận diện... Vui lòng đợi</p>
+        <div class="input-section">
+          <div class="section-title">
+            <span class="icon text-bg">&#128221;</span>Nhập Text
+          </div>
+          <textarea
+            id="messageText"
+            placeholder="Dán nội dung tin nhắn đặt hàng vào đây..."
+          ></textarea>
+          <button
+            class="btn btn-success"
+            onclick="processText()"
+            style="margin-top: 16px; width: 100%"
+          >
+            <span class="icon">&#9889;</span> Nhận diện từ text
+          </button>
         </div>
-
-        <!-- Results -->
-        <div id="resultSection" class="result-section">
+      </div>
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Đang nhận diện... Vui lòng đợi</p>
+      </div>
+      <div id="resultSection" class="result-section">
+        <div class="card">
           <div class="result-header">
-            <h2>✅ Thông tin đã trích xuất</h2>
+            <h2>&#9989; Kết quả nhận diện</h2>
             <div class="action-buttons">
-              <button class="btn btn-secondary" onclick="resetForm()">
-                <span class="btn-icon">🔄</span>
-                <span>Làm mới</span>
+              <button class="btn btn-outline" onclick="resetForm()">
+                <span class="icon">&#128260;</span> Làm mới
               </button>
-              <button class="btn btn-success" onclick="saveOrder()">
-                <span class="btn-icon">💾</span>
-                <span>Lưu đơn hàng</span>
+              <button class="btn btn-primary" onclick="saveAsJSON()">
+                <span class="icon">&#128196;</span> Lưu JSON
+              </button>
+              <button class="btn btn-success" onclick="saveAsExcel()">
+                <span class="icon">&#128202;</span> Lưu Excel
               </button>
             </div>
           </div>
-
-          <!-- Needs Review Warning -->
           <div id="needsReviewWarning" style="display: none">
             <div class="alert alert-warning show">
-              <span>⚠️</span>
+              <span>&#9888;&#65039;</span>
               <div>
-                <strong>Cần kiểm tra:</strong>
-                <span id="reviewNotes"></span>
+                <strong>Cần kiểm tra:</strong> <span id="reviewNotes"></span>
               </div>
             </div>
           </div>
-
-          <!-- Noise Detected -->
           <div id="noiseBox" class="noise-box" style="display: none">
-            <h4>
-              <span>🧹</span>
-              <span>Thông tin nhiễu đã lọc:</span>
-            </h4>
+            <h4><span>&#129529;</span> Thông tin nhiễu đã lọc:</h4>
             <div class="noise-list" id="noiseList"></div>
           </div>
-
           <div class="section-header">
-            <h3>👤 Thông tin khách hàng</h3>
+            <h3>&#128100; Thông tin khách hàng</h3>
             <span class="badge" id="customerBadge">CUSTOMER</span>
           </div>
           <div class="info-grid" id="customerInfo"></div>
-
           <div class="section-header">
-            <h3>📦 Thông tin đơn hàng</h3>
+            <h3>&#128230; Thông tin đơn hàng</h3>
           </div>
           <div class="info-grid" id="orderInfo"></div>
-
           <div class="section-header">
-            <h3>🛍️ Danh sách sản phẩm</h3>
+            <h3>&#128717;&#65039; Danh sách sản phẩm</h3>
           </div>
           <table>
             <thead>
               <tr>
-                <th style="width: 60px">STT</th>
+                <th style="width: 50px">STT</th>
+                <th style="width: 110px">Mã SP</th>
                 <th>Tên sản phẩm</th>
-                <th style="width: 100px">Số lượng</th>
-                <th style="width: 140px">Đơn giá</th>
-                <th style="width: 140px">Thành tiền</th>
-                <th>Ghi chú</th>
+                <th style="width: 70px">SL</th>
+                <th style="width: 70px">ĐVT</th>
+                <th style="width: 130px" class="text-right">Đơn giá</th>
+                <th style="width: 130px" class="text-right">Thành tiền</th>
               </tr>
             </thead>
             <tbody id="itemsBody"></tbody>
           </table>
-
           <div class="summary-box" id="summaryBox">
             <div class="summary-row">
-              <span class="font-semibold">Tổng số sản phẩm:</span>
-              <span id="totalItems" class="font-semibold">0</span>
+              <span style="font-weight: 600">Tổng số sản phẩm:</span
+              ><span id="totalItems" style="font-weight: 600">0</span>
             </div>
             <div class="summary-row">
-              <span class="font-semibold text-primary">TỔNG THANH TOÁN:</span>
-              <span id="totalAmount" class="font-semibold text-primary"
+              <span style="font-weight: 700; color: var(--primary)"
+                >TỔNG THANH TOÁN:</span
+              ><span
+                id="totalAmount"
+                style="font-weight: 700; color: var(--primary)"
                 >0đ</span
               >
             </div>
@@ -908,29 +847,26 @@ COD nhé!"
         </div>
       </div>
     </div>
-
     <script>
-      // Giữ nguyên toàn bộ JavaScript logic như cũ
       const API_URL = window.location.origin;
       let currentJobId = null;
       let currentOrderData = null;
-
       function formatMoney(val) {
         return new Intl.NumberFormat("vi-VN", {
           style: "currency",
           currency: "VND",
         }).format(val || 0);
       }
-
       function showAlert(msg, type) {
         const box = document.getElementById("alertBox");
-        const formattedMsg = msg.replace(/\n/g, "<br>");
-        box.innerHTML = `<div class="alert alert-${type} show">${formattedMsg}</div>`;
-
-        const timeout = msg.length > 100 ? 7000 : 5000;
-        setTimeout(() => (box.innerHTML = ""), timeout);
+        box.innerHTML =
+          '<div class="alert alert-' +
+          type +
+          ' show">' +
+          msg.replace(/\n/g, "<br>") +
+          "</div>";
+        setTimeout(() => (box.innerHTML = ""), msg.length > 100 ? 7000 : 4000);
       }
-
       const uploadArea = document.getElementById("uploadArea");
       uploadArea.addEventListener("dragover", (e) => {
         e.preventDefault();
@@ -942,26 +878,23 @@ COD nhé!"
       uploadArea.addEventListener("drop", (e) => {
         e.preventDefault();
         uploadArea.classList.remove("dragover");
-        const files = e.dataTransfer.files;
-        if (files.length) {
-          document.getElementById("fileInput").files = files;
-          handleFileSelect({ target: { files } });
+        if (e.dataTransfer.files.length) {
+          document.getElementById("fileInput").files = e.dataTransfer.files;
+          handleFileSelect({ target: { files: e.dataTransfer.files } });
         }
       });
-
       function handleFileSelect(e) {
         const file = e.target.files[0];
         if (!file) return;
-
-        if (file.size > 10 * 1024 * 1024) {
-          showAlert("❌ File quá lớn! Vui lòng chọn file dưới 10MB", "error");
-          return;
-        }
-
+        if (file.size > 10 * 1024 * 1024)
+          return showAlert(
+            "File qu\u00e1 l\u1edbn! T\u1ed1i \u0111a 10MB",
+            "error",
+          );
         if (file.type.startsWith("image/")) {
           const reader = new FileReader();
-          reader.onload = function (e) {
-            document.getElementById("previewImg").src = e.target.result;
+          reader.onload = (ev) => {
+            document.getElementById("previewImg").src = ev.target.result;
             document.getElementById("fileName").textContent = file.name;
             document.getElementById("fileSize").textContent = formatFileSize(
               file.size,
@@ -970,176 +903,152 @@ COD nhé!"
             document.getElementById("uploadArea").style.display = "none";
           };
           reader.readAsDataURL(file);
+        } else {
+          const pi = document.getElementById("imagePreview");
+          pi.innerHTML =
+            '<div class="preview-info" style="padding:20px;font-size:.95rem">&#128196; <strong>' +
+            file.name +
+            "</strong> - " +
+            formatFileSize(file.size) +
+            ' <button class="btn btn-outline" onclick="removeImage()" style="margin-left:12px;padding:6px 12px;min-height:auto;font-size:.8rem">\u00d7 X\u00f3a</button></div>';
+          pi.classList.add("show");
+          document.getElementById("uploadArea").style.display = "none";
         }
-
         document.getElementById("processBtn").disabled = false;
-        showAlert(`✅ Đã chọn: ${file.name}`, "success");
+        showAlert("\u0110\u00e3 ch\u1ecdn: " + file.name, "success");
       }
-
-      function formatFileSize(bytes) {
-        if (bytes < 1024) return bytes + " B";
-        else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-        else return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+      function formatFileSize(b) {
+        if (b < 1024) return b + " B";
+        if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+        return (b / 1048576).toFixed(1) + " MB";
       }
-
       function removeImage() {
         document.getElementById("fileInput").value = "";
         document.getElementById("imagePreview").classList.remove("show");
         document.getElementById("uploadArea").style.display = "block";
         document.getElementById("processBtn").disabled = true;
-        showAlert("🗑️ Đã xóa ảnh", "success");
       }
-
       async function processImage() {
         const file = document.getElementById("fileInput").files[0];
-        if (!file) return showAlert("Chọn file screenshot!", "error");
-
+        if (!file) return showAlert("Ch\u1ecdn file tr\u01b0\u1edbc!", "error");
         document.getElementById("loading").classList.add("active");
         const form = new FormData();
         form.append("file", file);
-
+        const model = document.getElementById("modelSelect").value;
+        if (model) form.append("model", model);
         try {
-          const res = await fetch(`${API_URL}/api/order/upload`, {
+          const res = await fetch(API_URL + "/api/order/upload", {
             method: "POST",
             body: form,
           });
-
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
-
+          if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
-          console.log("API Response:", data);
           document.getElementById("loading").classList.remove("active");
-
           if (data.success) {
-            const orderData = data.data;
-            const hasValidData =
-              orderData.customer_name ||
-              orderData.customer_phone ||
-              orderData.business_name ||
-              (orderData.items && orderData.items.length > 0);
-
-            if (!hasValidData) {
-              showAlert(
-                "⚠️ Ảnh không đúng format đơn đặt hàng!\n\nVui lòng upload ảnh screenshot tin nhắn đặt hàng có chứa:\n• Tên khách hàng\n• Số điện thoại\n• Sản phẩm và số lượng",
-                "warning",
-              );
-              return;
-            }
-
-            currentJobId = data.job_id;
-            currentOrderData = data.data;
-            displayResults(data.data);
-            showAlert("✅ Nhận diện thành công!", "success");
-          } else {
-            console.error("API Error:", data);
-            const errorMsg = data.error_message || "Unknown error";
-
+            const od = data.data;
             if (
-              errorMsg.includes("parse") ||
-              errorMsg.includes("JSON") ||
-              errorMsg.includes("format")
-            ) {
-              showAlert(
-                "⚠️ Ảnh không đúng format đơn đặt hàng!\n\nHãy đảm bảo ảnh chứa thông tin đơn hàng rõ ràng.",
+              !od.customer_name &&
+              !od.customer_phone &&
+              !od.business_name &&
+              !(od.items && od.items.length)
+            )
+              return showAlert(
+                "Kh\u00f4ng nh\u1eadn di\u1ec7n \u0111\u01b0\u1ee3c th\u00f4ng tin \u0111\u01a1n h\u00e0ng t\u1eeb file n\u00e0y.",
                 "warning",
               );
-            } else {
-              showAlert("❌ Lỗi: " + errorMsg, "error");
-            }
+            currentJobId = data.job_id;
+            currentOrderData = od;
+            displayResults(od);
+            showAlert("Nh\u1eadn di\u1ec7n th\u00e0nh c\u00f4ng!", "success");
+          } else {
+            showAlert(
+              "L\u1ed7i: " + (data.error_message || "Unknown"),
+              "error",
+            );
           }
         } catch (err) {
-          console.error("Request failed:", err);
           document.getElementById("loading").classList.remove("active");
-          showAlert(
-            "❌ Không thể xử lý ảnh!\n\nKiểm tra lại:\n• File có phải là ảnh không?\n• Ảnh có chứa thông tin đơn hàng?\n• Kết nối mạng ổn định?",
-            "error",
-          );
+          showAlert("L\u1ed7i: " + err.message, "error");
         }
       }
-
       async function processText() {
-        const text = document.getElementById("messageText").value;
-        if (!text.trim()) return showAlert("Nhập nội dung tin nhắn!", "error");
-
+        const text = document.getElementById("messageText").value.trim();
+        if (!text)
+          return showAlert("Nh\u1eadp n\u1ed9i dung tin nh\u1eafn!", "error");
         document.getElementById("loading").classList.add("active");
         const form = new FormData();
         form.append("message_text", text);
-
+        const model = document.getElementById("modelSelect").value;
+        if (model) form.append("model", model);
         try {
-          const res = await fetch(`${API_URL}/api/order/text`, {
+          const res = await fetch(API_URL + "/api/order/text", {
             method: "POST",
             body: form,
           });
-
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
-
+          if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
-          console.log("API Response:", data);
           document.getElementById("loading").classList.remove("active");
-
           if (data.success) {
-            const orderData = data.data;
-            const hasValidData =
-              orderData.customer_name ||
-              orderData.customer_phone ||
-              orderData.business_name ||
-              (orderData.items && orderData.items.length > 0);
-
-            if (!hasValidData) {
-              showAlert(
-                "⚠️ Text không đúng format đơn đặt hàng!\n\nVui lòng nhập nội dung tin nhắn có chứa:\n• Tên khách hàng\n• Số điện thoại\n• Sản phẩm và số lượng",
-                "warning",
-              );
-              return;
-            }
-
-            currentJobId = data.job_id;
-            currentOrderData = data.data;
-            displayResults(data.data);
-            showAlert("✅ Nhận diện thành công!", "success");
-          } else {
-            console.error("API Error:", data);
-            const errorMsg = data.error_message || "Unknown error";
-
+            const od = data.data;
             if (
-              errorMsg.includes("parse") ||
-              errorMsg.includes("JSON") ||
-              errorMsg.includes("format")
-            ) {
-              showAlert(
-                "⚠️ Text không đúng format đơn đặt hàng!\n\nHãy đảm bảo text chứa thông tin đơn hàng rõ ràng.",
+              !od.customer_name &&
+              !od.customer_phone &&
+              !od.business_name &&
+              !(od.items && od.items.length)
+            )
+              return showAlert(
+                "Kh\u00f4ng nh\u1eadn di\u1ec7n \u0111\u01b0\u1ee3c th\u00f4ng tin \u0111\u01a1n h\u00e0ng t\u1eeb text n\u00e0y.",
                 "warning",
               );
-            } else {
-              showAlert("❌ Lỗi: " + errorMsg, "error");
-            }
+            currentJobId = data.job_id;
+            currentOrderData = od;
+            displayResults(od);
+            showAlert("Nh\u1eadn di\u1ec7n th\u00e0nh c\u00f4ng!", "success");
+          } else {
+            showAlert(
+              "L\u1ed7i: " + (data.error_message || "Unknown"),
+              "error",
+            );
           }
         } catch (err) {
-          console.error("Request failed:", err);
           document.getElementById("loading").classList.remove("active");
-          showAlert(
-            "❌ Không thể xử lý text!\n\nKiểm tra lại:\n• Text có chứa thông tin đơn hàng?\n• Kết nối mạng ổn định?",
-            "error",
-          );
+          showAlert("L\u1ed7i: " + err.message, "error");
         }
       }
-
+      function esc(v) {
+        return (v == null ? "" : String(v)).replace(/"/g, "&quot;");
+      }
+      function infoItem(label, value, placeholder, isCust, isHl, type) {
+        const cls =
+          (isCust ? "customer-info " : "") + (isHl ? "highlight" : "");
+        const inp =
+          type === "date"
+            ? '<input type="date" value="' + esc(value) + '">'
+            : '<input type="text" value="' +
+              esc(value) +
+              '" placeholder="' +
+              (placeholder || "") +
+              '">';
+        return (
+          '<div class="info-item ' +
+          cls +
+          '"><div class="info-label">' +
+          label +
+          '</div><div class="info-value">' +
+          inp +
+          "</div></div>"
+        );
+      }
       function displayResults(data) {
-        if (!data || typeof data !== "object") {
-          console.error("Invalid data:", data);
-          showAlert("❌ Dữ liệu không hợp lệ", "error");
-          return;
-        }
-
-        // Needs Review Warning
+        if (!data || typeof data !== "object")
+          return showAlert(
+            "D\u1eef li\u1ec7u kh\u00f4ng h\u1ee3p l\u1ec7",
+            "error",
+          );
         if (data.needs_review) {
           document.getElementById("needsReviewWarning").style.display = "block";
           document.getElementById("reviewNotes").textContent =
-            data.review_notes || "Thiếu một số thông tin quan trọng";
+            data.review_notes || "Thi\u1ebfu th\u00f4ng tin quan tr\u1ecdng";
           document
             .getElementById("customerBadge")
             .classList.add("needs-review");
@@ -1149,155 +1058,174 @@ COD nhé!"
             .getElementById("customerBadge")
             .classList.remove("needs-review");
         }
-
-        // Customer Type Badge
-        const customerBadge = document.getElementById("customerBadge");
-        customerBadge.classList.remove("individual", "business");
+        const badge = document.getElementById("customerBadge");
+        badge.classList.remove("individual", "business");
         if (data.customer_type === "individual") {
-          customerBadge.textContent = "CÁ NHÂN";
-          customerBadge.classList.add("individual");
+          badge.textContent = "C\u00c1 NH\u00c2N";
+          badge.classList.add("individual");
         } else if (data.customer_type === "business") {
-          customerBadge.textContent = "DOANH NGHIỆP";
-          customerBadge.classList.add("business");
+          badge.textContent = "DOANH NGHI\u1ec6P";
+          badge.classList.add("business");
         } else {
-          customerBadge.textContent = "CUSTOMER";
+          badge.textContent = "CUSTOMER";
         }
-
-        // Noise Detected
-        if (data.noise_detected && data.noise_detected.length > 0) {
+        if (data.noise_detected && data.noise_detected.length) {
           document.getElementById("noiseBox").style.display = "block";
-          const noiseList = document.getElementById("noiseList");
-          noiseList.innerHTML = "";
-          data.noise_detected.forEach((noise) => {
-            noiseList.innerHTML += `<span class="noise-item">${noise}</span>`;
-          });
+          document.getElementById("noiseList").innerHTML = data.noise_detected
+            .map((n) => '<span class="noise-item">' + n + "</span>")
+            .join("");
         } else {
           document.getElementById("noiseBox").style.display = "none";
         }
-
-        // Thông tin khách hàng
-        let customerHTML = "";
-
+        let ch = "";
+        ch += infoItem(
+          "T\u00ean kh\u00e1ch h\u00e0ng",
+          data.customer_name,
+          data.customer_type === "business" ? "T\u00ean t\u1ed5 ch\u1ee9c / c\u00f4ng ty" : "H\u1ecd v\u00e0 t\u00ean",
+          true,
+          true,
+        );
         if (data.customer_type === "business") {
-          customerHTML += `
-            <div class="info-item customer-info highlight">
-              <div class="info-label">🏢 Tên tổ chức</div>
-              <div class="info-value"><input type="text" value="${data.business_name ?? ""}" placeholder="Tên công ty/Hộ kinh doanh"></div>
-            </div>
-            <div class="info-item customer-info">
-              <div class="info-label">👤 Người liên hệ</div>
-              <div class="info-value"><input type="text" value="${data.customer_name ?? ""}" placeholder="Tên người liên hệ"></div>
-            </div>
-            <div class="info-item customer-info">
-              <div class="info-label">🏢 Địa chỉ công ty</div>
-              <div class="info-value"><input type="text" value="${data.business_address ?? ""}" placeholder="Địa chỉ trụ sở công ty"></div>
-            </div>
-          `;
-        } else {
-          customerHTML += `
-            <div class="info-item customer-info highlight">
-              <div class="info-label">👤 Tên khách hàng</div>
-              <div class="info-value"><input type="text" value="${data.customer_name ?? ""}" placeholder="Họ và tên"></div>
-            </div>
-          `;
+          ch += infoItem(
+            "T\u00ean vi\u1ebft t\u1eaft",
+            data.business_name,
+            "T\u00ean th\u01b0\u01a1ng hi\u1ec7u (n\u1ebfu kh\u00e1c)",
+            true,
+          );
+          ch += infoItem(
+            "\u0110\u1ecba ch\u1ec9 tr\u1ee5 s\u1edf",
+            data.business_address,
+            "\u0110\u1ecba ch\u1ec9 c\u00f4ng ty",
+            true,
+          );
         }
-
-        customerHTML += `
-          <div class="info-item customer-info ${data.customer_tax_code ? "highlight" : ""}">
-            <div class="info-label">🔢 Mã số thuế</div>
-            <div class="info-value"><input type="text" value="${data.customer_tax_code ?? ""}" placeholder="MST (nếu có)"></div>
-          </div>
-          <div class="info-item customer-info highlight">
-            <div class="info-label">📞 Số điện thoại</div>
-            <div class="info-value"><input type="text" value="${data.customer_phone ?? ""}" placeholder="Số ĐT"></div>
-          </div>
-          <div class="info-item customer-info">
-            <div class="info-label">📍 Địa chỉ giao hàng</div>
-            <div class="info-value"><input type="text" value="${data.customer_address ?? ""}" placeholder="Địa chỉ"></div>
-          </div>
-          <div class="info-item customer-info">
-            <div class="info-label">✉️ Email</div>
-            <div class="info-value"><input type="email" value="${data.customer_email ?? ""}" placeholder="Email"></div>
-          </div>
-        `;
-
-        document.getElementById("customerInfo").innerHTML = customerHTML;
-
-        // Thông tin đơn hàng
-        document.getElementById("orderInfo").innerHTML = `
-          <div class="info-item">
-            <div class="info-label">🔖 Mã đơn hàng</div>
-            <div class="info-value"><input type="text" value="${data.order_id ?? ""}" placeholder="Tự động tạo"></div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">📅 Ngày đặt</div>
-            <div class="info-value"><input type="date" value="${data.order_date ?? ""}"></div>
-          </div>
-          <div class="info-item highlight">
-            <div class="info-label">💳 Phương thức thanh toán</div>
-            <div class="info-value"><input type="text" value="${data.payment_method ?? ""}" placeholder="COD/CK"></div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">📝 Ghi chú</div>
-            <div class="info-value"><input type="text" value="${data.notes ?? ""}" placeholder="Ghi chú"></div>
-          </div>
-        `;
-
-        // Hiển thị items
+        ch += infoItem(
+          "M\u00e3 s\u1ed1 thu\u1ebf",
+          data.customer_tax_code,
+          "MST (n\u1ebfu c\u00f3)",
+          true,
+        );
+        ch += infoItem(
+          "S\u1ed1 \u0111i\u1ec7n tho\u1ea1i",
+          data.customer_phone,
+          "S\u1ed1 \u0110T",
+          true,
+          true,
+        );
+        ch += infoItem(
+          "\u0110\u1ecba ch\u1ec9 giao h\u00e0ng",
+          data.customer_address,
+          "\u0110\u1ecba ch\u1ec9",
+          true,
+        );
+        ch += infoItem("Email", data.customer_email, "Email", true);
+        document.getElementById("customerInfo").innerHTML = ch;
+        document.getElementById("orderInfo").innerHTML =
+          infoItem(
+            "M\u00e3 \u0111\u01a1n h\u00e0ng",
+            data.order_id,
+            "M\u00e3 \u0111\u01a1n",
+          ) +
+          infoItem(
+            "Ng\u00e0y \u0111\u1eb7t",
+            data.order_date,
+            "",
+            "",
+            "",
+            "date",
+          ) +
+          infoItem(
+            "Thanh to\u00e1n",
+            data.payment_method,
+            "COD/CK",
+            false,
+            true,
+          ) +
+          infoItem("Ghi ch\u00fa", data.notes, "Ghi ch\u00fa");
         const tbody = document.getElementById("itemsBody");
-        tbody.innerHTML = "";
         const items = data.items || [];
-
-        if (items.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" style="text-align: center; padding: 30px; color: #6b7280;">
-                Không có sản phẩm
-              </td>
-            </tr>
-          `;
+        if (!items.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--gray)">Kh\u00f4ng c\u00f3 s\u1ea3n ph\u1ea9m</td></tr>';
         } else {
-          items.forEach((item, i) => {
-            tbody.innerHTML += `
-              <tr>
-                <td style="text-align:center; font-weight:600; color: #64748b;">${item.line_number || i + 1}</td>
-                <td><input type="text" value="${item.product_name ?? ""}"></td>
-                <td><input type="number" value="${item.quantity ?? 0}" style="text-align:center;"></td>
-                <td style="text-align:right; color: #059669; font-weight: 500;">${item.unit_price ? formatMoney(item.unit_price) : "-"}</td>
-                <td style="text-align:right; font-weight:600; color: #047857;">${item.total_price ? formatMoney(item.total_price) : "-"}</td>
-                <td><input type="text" value="${item.notes ?? ""}" placeholder="Ghi chú"></td>
-              </tr>
-            `;
-          });
+          tbody.innerHTML = items
+            .map(
+              (it, i) =>
+                '<tr><td style="text-align:center;font-weight:600;color:var(--gray)">' +
+                (it.line_number || i + 1) +
+                '</td><td><input value="' +
+                esc(it.product_code) +
+                '" placeholder="-"></td><td><input value="' +
+                esc(it.product_name) +
+                '"></td><td><input type="number" value="' +
+                (it.quantity || 0) +
+                '" style="text-align:center;width:60px"></td><td><input value="' +
+                esc(it.unit) +
+                '" style="width:60px" placeholder="-"></td><td class="price-cell">' +
+                (it.unit_price ? formatMoney(it.unit_price) : "-") +
+                '</td><td class="price-cell">' +
+                (it.total_price ? formatMoney(it.total_price) : "-") +
+                "</td></tr>",
+            )
+            .join("");
         }
-
-        // Summary
-        const totalItems = items.reduce(
-          (sum, item) => sum + (parseFloat(item.quantity) || 0),
+        const totalQty = items.reduce(
+          (s, it) => s + (parseFloat(it.quantity) || 0),
           0,
         );
-        document.getElementById("totalItems").textContent = totalItems;
+        document.getElementById("totalItems").textContent = totalQty;
         document.getElementById("totalAmount").textContent = formatMoney(
           data.total_amount,
         );
-
-        // Show results section
         document.getElementById("resultSection").classList.add("active");
         document
           .getElementById("resultSection")
           .scrollIntoView({ behavior: "smooth" });
       }
-
-      async function saveOrder() {
-        if (!currentJobId) return showAlert("Chưa có dữ liệu để lưu!", "error");
-
-        showAlert(
-          "💾 Đã lưu đơn hàng (Job ID: " + currentJobId + ")",
-          "success",
-        );
-        console.log("Saved order:", currentOrderData);
+      async function saveAsJSON() {
+        if (!currentJobId)
+          return showAlert(
+            "Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u \u0111\u1ec3 l\u01b0u!",
+            "error",
+          );
+        try {
+          const r = await fetch("/api/export/order/" + currentJobId + "/json", {
+            method: "POST",
+          });
+          if (!r.ok) throw new Error("Export failed");
+          const blob = await r.blob();
+          downloadBlob(blob, "order_" + currentJobId + ".json");
+          showAlert("\u0110\u00e3 l\u01b0u file JSON!", "success");
+        } catch (e) {
+          showAlert("L\u1ed7i: " + e.message, "error");
+        }
       }
-
+      async function saveAsExcel() {
+        if (!currentJobId) return showAlert("Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u \u0111\u1ec3 l\u01b0u!", "error");
+        try {
+          const r = await fetch(
+            "/api/export/order/" + currentJobId + "/excel",
+            { method: "POST" },
+          );
+          if (!r.ok) throw new Error("Export failed");
+          const blob = await r.blob();
+          downloadBlob(blob, "order_" + currentJobId + ".xlsx");
+          showAlert("\u0110\u00e3 l\u01b0u file Excel!", "success");
+        } catch (e) {
+          showAlert("L\u1ed7i: " + e.message, "error");
+        }
+      }
+      function downloadBlob(blob, name) {
+        const url = URL.createObjectURL(blob);
+        const a = Object.assign(document.createElement("a"), {
+          href: url,
+          download: name,
+        });
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
       function resetForm() {
         document.getElementById("fileInput").value = "";
         document.getElementById("messageText").value = "";
@@ -1307,7 +1235,7 @@ COD nhé!"
         document.getElementById("uploadArea").style.display = "block";
         currentJobId = null;
         currentOrderData = null;
-        showAlert("✨ Đã làm mới", "success");
+        showAlert("\u0110\u00e3 l\u00e0m m\u1edbi!", "success");
       }
     </script>
   </body>

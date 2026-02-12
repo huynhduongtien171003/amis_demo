@@ -1,9 +1,9 @@
 """
 Service export dữ liệu sang định dạng AMIS
-Hỗ trợ export Excel, XML, JSON
+Hỗ trợ export Excel, XML, JSON cho cả Invoice và Order
 """
 
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from pathlib import Path
 from datetime import datetime
 from decimal import Decimal
@@ -11,6 +11,7 @@ from decimal import Decimal
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
+import pandas as pd
 from loguru import logger
 
 from backend.config import settings
@@ -378,6 +379,204 @@ class AMISExportService:
         except Exception as e:
             logger.error(f"Lỗi khi export JSON: {str(e)}")
             raise
+
+    # ==================== ORDER EXPORT METHODS ====================
+
+    def export_order_to_json(self, order_data, job_id: str) -> str:
+        """
+        Export dữ liệu đơn hàng ra file JSON
+
+        Args:
+            order_data: OrderData object
+            job_id: ID của job
+
+        Returns:
+            Đường dẫn file JSON đã tạo
+        """
+        try:
+            import json
+            
+            # Prepare data
+            export_data = self._prepare_order_data_for_export(order_data)
+
+            # Tạo filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"order_{job_id}_{timestamp}.json"
+            file_path = self.output_dir / filename
+
+            # Write JSON
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(export_data, f, ensure_ascii=False, indent=2)
+
+            logger.info(f"✅ Đã export order JSON: {file_path}")
+            return str(file_path)
+
+        except Exception as e:
+            logger.error(f"❌ Lỗi export order JSON: {str(e)}")
+            raise
+
+    def export_order_to_excel(self, order_data, job_id: str) -> str:
+        """
+        Export dữ liệu đơn hàng ra file Excel
+
+        Args:
+            order_data: OrderData object
+            job_id: ID của job
+
+        Returns:
+            Đường dẫn file Excel đã tạo
+        """
+        try:
+            # Prepare data
+            export_data = self._prepare_order_data_for_export(order_data)
+
+            # Tạo filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"order_{job_id}_{timestamp}.xlsx"
+            file_path = self.output_dir / filename
+
+            # Tạo Excel với pandas và openpyxl
+            with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                # Sheet 1: Order Information
+                order_info_df = pd.DataFrame([export_data["order_info"]])
+                order_info_df.to_excel(writer, sheet_name='Order Information', index=False)
+
+                # Sheet 2: Order Items
+                if export_data["items"]:
+                    items_df = pd.DataFrame(export_data["items"])
+                    items_df.to_excel(writer, sheet_name='Order Items', index=False)
+                else:
+                    # Tạo sheet rỗng với headers
+                    items_df = pd.DataFrame(columns=[
+                        "order_id", "item_no", "product_code", "product_name",
+                        "quantity", "unit", "unit_price", "total_price", "note"
+                    ])
+                    items_df.to_excel(writer, sheet_name='Order Items', index=False)
+
+                # Sheet 3: Metadata
+                metadata_df = pd.DataFrame([export_data["metadata"]])
+                metadata_df.to_excel(writer, sheet_name='Metadata', index=False)
+
+            # Format Excel
+            self._format_order_excel_file(file_path)
+
+            logger.info(f"✅ Đã export order Excel: {file_path}")
+            return str(file_path)
+
+        except Exception as e:
+            logger.error(f"❌ Lỗi export order Excel: {str(e)}")
+            raise
+
+    def _prepare_order_data_for_export(self, order_data) -> Dict[str, Any]:
+        """
+        Chuẩn bị dữ liệu đơn hàng cho export
+
+        Args:
+            order_data: OrderData object
+
+        Returns:
+            Dict với dữ liệu đã format
+        """
+        # Convert Decimal sang float/str cho JSON serialization
+        def convert_decimal(obj):
+            if isinstance(obj, Decimal):
+                return float(obj) if obj else None
+            return obj
+
+        # Convert date sang string
+        order_date_str = order_data.order_date.isoformat() if order_data.order_date else ""
+
+        # Prepare order info
+        order_info = {
+            "order_id": order_data.order_id or "",
+            "customer_id": getattr(order_data, 'customer_id', "") or "",
+            "customer_name": order_data.customer_name or "",
+            "customer_phone": order_data.customer_phone or "",
+            "customer_address": order_data.customer_address or "",
+            "order_date": order_date_str,
+            "total_amount": convert_decimal(order_data.total_amount),
+            "total_items": len(order_data.items),
+            "status": getattr(order_data, 'status', "") or "",
+            "customer_email": order_data.customer_email or "",
+            "customer_type": order_data.customer_type or "",
+            "business_name": order_data.business_name or "",
+            "customer_tax_code": order_data.customer_tax_code or "",
+            "business_address": order_data.business_address or "",
+            "payment_method": order_data.payment_method or "",
+            "notes": order_data.notes or "",
+        }
+
+        # Prepare items
+        items = []
+        for item in order_data.items:
+            items.append({
+                "order_id": order_data.order_id or "",
+                "item_no": item.line_number,
+                "product_code": getattr(item, 'product_code', "") or "",
+                "product_name": item.product_name or "",
+                "quantity": convert_decimal(item.quantity),
+                "unit": getattr(item, 'unit', "") or "",
+                "unit_price": convert_decimal(item.unit_price),
+                "total_price": convert_decimal(item.total_price),
+                "note": item.notes or "",
+            })
+
+        return {
+            "order_info": order_info,
+            "items": items,
+            "metadata": {
+                "processing_time": order_data.processing_time,
+                "needs_review": order_data.needs_review,
+                "review_notes": order_data.review_notes or "",
+                "noise_detected": order_data.noise_detected or [],
+                "exported_at": datetime.now().isoformat(),
+            }
+        }
+
+    def _format_order_excel_file(self, file_path: Path):
+        """
+        Format file Excel cho đẹp
+
+        Args:
+            file_path: Đường dẫn file Excel
+        """
+        try:
+            from openpyxl import load_workbook
+
+            wb = load_workbook(file_path)
+
+            # Style cho headers
+            header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            header_font = Font(bold=True, color="FFFFFF")
+            center_alignment = Alignment(horizontal="center", vertical="center")
+
+            for sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+
+                # Format headers (row 1)
+                for cell in ws[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = center_alignment
+
+                # Auto-adjust column width
+                for column in ws.columns:
+                    max_length = 0
+                    column_letter = column[0].column_letter
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = min(max_length + 2, 50)
+                    ws.column_dimensions[column_letter].width = adjusted_width
+
+            wb.save(file_path)
+            logger.debug(f"✅ Đã format Excel file: {file_path}")
+
+        except Exception as e:
+            logger.warning(f"⚠️ Không thể format Excel: {str(e)}")
 
 
 # Singleton instance

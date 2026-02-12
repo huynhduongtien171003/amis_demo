@@ -80,226 +80,130 @@ class OrderRecognitionService:
         logger.debug(f"Đã encode ảnh: {image_path} -> {media_type}")
         return data_uri
 
-    def _build_order_extraction_prompt_from_image(self) -> str:
+    def _extract_text_from_pdf(self, file_path: str) -> str:
         """
-        Xây dựng prompt cho OpenAI Vision để trích xuất đơn hàng từ ảnh screenshot
+        Trích xuất text từ file PDF
+
+        Args:
+            file_path: Đường dẫn file PDF
 
         Returns:
-            Prompt string
+            Text đã trích xuất
         """
-        return """
-BẠN LÀ CHUYÊN GIA NHẬN DIỆN ĐƠN ĐẶT HÀNG TỪ TIN NHẮN/EMAIL
-CÔNG CỤ NÀY DÀNH CHO NGƯỜI BÁN/SHOP để nhận diện thông tin KHÁCH HÀNG từ tin nhắn đặt hàng
+        try:
+            import pdfplumber
+            
+            text_content = []
+            with pdfplumber.open(file_path) as pdf:
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        text_content.append(text)
+            
+            full_text = "\n\n".join(text_content)
+            logger.info(f"✅ Đã trích xuất {len(full_text)} ký tự từ PDF")
+            return full_text
 
-NHIỆM VỤ: Trích xuất thông tin KHÁCH HÀNG và đơn đặt hàng từ ảnh tin nhắn, BỎ QUA thông tin nhiễu
+        except Exception as e:
+            logger.error(f"❌ Lỗi trích xuất text từ PDF: {str(e)}")
+            raise
 
-⚠️ QUAN TRỌNG: CHỈ trích xuất thông tin KHÁCH HÀNG (người đặt hàng), KHÔNG trích xuất thông tin người bán/shop
+    def _extract_text_from_html(self, file_path: str) -> str:
+        """
+        Trích xuất text từ file HTML
 
-═══════════════════════════════════════════════
-⚠️ XỬ LÝ NHIỄU - CỰC KỲ QUAN TRỌNG:
-═══════════════════════════════════════════════
-Tin nhắn có thể chứa nhiều thông tin KHÔNG LIÊN QUAN:
+        Args:
+            file_path: Đường dẫn file HTML
 
-❌ BỎ QUA các thông tin này:
-   - Lời chào hỏi: "Chào anh", "Hi em", "Hello", "Xin chào", "Chào shop"
-   - Câu hỏi: "Có hàng không?", "Bao giờ ship?", "Còn hàng không?"
-   - Emoji/sticker: 😊, 👍, ❤️, 🙏, 😀
-   - Lời cảm ơn: "Cảm ơn", "Thank you", "Thanks"
-   - Tin nhắn thăm hỏi: "Hôm nay thế nào?", "Khỏe không?"
-   - UI elements: Tên app, thời gian tin nhắn, nút bấm
+        Returns:
+            Text đã trích xuất
+        """
+        try:
+            from bs4 import BeautifulSoup
+            
+            with open(file_path, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            
+            soup = BeautifulSoup(html_content, 'lxml')
+            
+            # Remove script và style tags
+            for script in soup(["script", "style"]):
+                script.decompose()
+            
+            # Lấy text
+            text = soup.get_text(separator='\n', strip=True)
+            
+            # Clean up whitespace
+            lines = [line.strip() for line in text.splitlines() if line.strip()]
+            clean_text = '\n'.join(lines)
+            
+            logger.info(f"✅ Đã trích xuất {len(clean_text)} ký tự từ HTML")
+            return clean_text
 
-✅ CHỈ TRÍCH XUẤT thông tin liên quan đến đơn hàng:
-   - Thông tin người đặt: Tên, số điện thoại, địa chỉ giao hàng, email
-   - Danh sách sản phẩm: Tên sản phẩm, số lượng, giá (nếu có)
-   - Thông tin đơn: Mã đơn, ngày đặt, phương thức thanh toán, ghi chú
+        except Exception as e:
+            logger.error(f"❌ Lỗi trích xuất text từ HTML: {str(e)}")
+            raise
 
-═══════════════════════════════════════════════
-🔍 PATTERN NHẬN DIỆN THÔNG TIN QUAN TRỌNG:
-═══════════════════════════════════════════════
-
-📌 LOẠI KHÁCH HÀNG (customer_type):
-   - "individual" nếu là cá nhân
-   - "business" nếu là công ty/hộ kinh doanh/doanh nghiệp
-
-📌 TÊN KHÁCH HÀNG (customer_name):
-   Pattern cá nhân:
-   - "Tên: Nguyễn Văn A"
-   - "Họ tên: ..."
-   - "Người nhận: ..."
-   - "Anh/Chị/Em: ..."
-
-📌 TÊN DOANH NGHIỆP (business_name):
-   Pattern doanh nghiệp:
-   - "Công ty: ABC Corp"
-   - "Công ty TNHH ..."
-   - "Hộ kinh doanh: ..."
-   - "Cửa hàng: ..."
-   - "Shop: ..."
-
-📌 MÃ SỐ THUẾ (customer_tax_code):
-   Pattern thường gặp:
-   - "MST: 0123456789"
-   - "Mã số thuế: ..."
-   - "Tax code: ..."
-   - Dãy 10-13 chữ số
-
-   Chỉ trích xuất nếu khách hàng cung cấp (thường là doanh nghiệp)
-
-📌 SỐ ĐIỆN THOẠI (customer_phone):
-   Pattern thường gặp:
-   - "SĐT: 0901234567"
-   - "Điện thoại: 090.123.4567"
-   - "Liên hệ: 090-123-4567"
-   - "Phone: 0901234567"
-   - Dãy số 10-11 chữ số bắt đầu bằng 0
-
-   Format chuẩn: Chỉ giữ số, bỏ dấu chấm/gạch ngang
-
-📌 ĐỊA CHỈ GIAO HÀNG (customer_address):
-   Pattern thường gặp:
-   - "Địa chỉ: ..."
-   - "Giao hàng: ..."
-   - "Địa chỉ nhận hàng: ..."
-   - "Ship về: ..."
-   - "Giao tới: ..."
-   - "Nhận hàng tại: ..."
-   - "Gửi về: ..."
-
-   ⚠️ QUAN TRỌNG: Đây là địa chỉ NHẬN HÀNG, không phải địa chỉ công ty
-   Đặc điểm: Thường dài, có số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố
-
-📌 ĐỊA CHỈ CÔNG TY/TRỤ SỞ (business_address):
-   CHỈ trích xuất nếu khách hàng là DOANH NGHIỆP và cung cấp địa chỉ công ty riêng
-   Pattern thường gặp:
-   - "Địa chỉ công ty: ..."
-   - "Trụ sở: ..."
-   - "Văn phòng: ..."
-   - "Địa chỉ kinh doanh: ..."
-
-   ⚠️ Nếu chỉ có MỘT địa chỉ → đặt vào customer_address (ưu tiên địa chỉ giao hàng)
-   ⚠️ Nếu có HAI địa chỉ khác nhau → phân biệt địa chỉ giao hàng vs địa chỉ công ty
-
-📌 EMAIL (customer_email):
-   Pattern: xxx@yyy.zzz
-   - "Email: example@gmail.com"
-   - "Mail: ..."
-
-📌 SẢN PHẨM (items):
-   Pattern thường gặp:
-   - "1. Laptop Dell XPS - 2 cái"
-   - "Áo thun trắng x 5"
-   - "- Điện thoại iPhone 15 (1 cái) - 20tr"
-   - "Laptop Dell x2 - 25 triệu/cái"
-   - "2 cái laptop"
-
-   Cấu trúc: [STT/Bullet] [Tên sản phẩm] [số lượng] [giá - optional]
-
-   Số lượng có thể là:
-   - "2 cái", "x 2", "×2", "(2)", "- 2"
-   - "5 chiếc", "10 kg"
-
-📌 MÃ ĐƠN HÀNG (order_id):
-   Pattern: "Mã đơn:", "Order ID:", "ĐH123456"
-
-📌 NGÀY ĐẶT (order_date):
-   Pattern: DD/MM/YYYY, DD-MM-YYYY
-   Chuyển sang format: YYYY-MM-DD
-
-📌 THANH TOÁN (payment_method):
-   Pattern: "COD", "Chuyển khoản", "Tiền mặt", "ATM", "Ship COD"
-
-═══════════════════════════════════════════════
-🧹 LỌC NHIỄU - DANH SÁCH ĐẦY ĐỦ:
-═══════════════════════════════════════════════
-
-❌ KHÔNG TRÍCH XUẤT các cụm từ này:
-   - "Chào anh/chị/em/shop/bạn"
-   - "Hi", "Hello", "Xin chào"
-   - "Cảm ơn", "Thank you", "Thanks"
-   - "Dạ", "Vâng", "Ạ", "Ơi"
-   - Emoji đơn lẻ: 😊, 👍, ❤️, 🙏
-   - "Shop có hàng không?"
-   - "Khi nào giao được?"
-   - "Còn hàng không?"
-   - "Hôm nay thế nào?"
-   - "Bao nhiêu tiền?"
-   - Timestamp: "10:30 AM", "Hôm qua"
-   - Tên app: "Zalo", "Messenger"
-
-✅ LƯU TRỮ NHIỄU vào noise_detected array để report lại cho user
-
-═══════════════════════════════════════════════
-💰 XỬ LÝ GIÁ TIỀN:
-═══════════════════════════════════════════════
-
-Các format giá tiền thường gặp:
-- "20 triệu" → 20000000
-- "20tr" → 20000000
-- "20 tr" → 20000000
-- "2.5 triệu" → 2500000
-- "500k" → 500000
-- "500 nghìn" → 500000
-- "1.000.000đ" → 1000000
-- "1,000,000 VNĐ" → 1000000
-
-CHỈ GHI SỐ THUẦN TÚY, bỏ dấu phẩy, chấm, ký tự đơn vị
-
-═══════════════════════════════════════════════
-FORMAT JSON TRẢ VỀ:
-═══════════════════════════════════════════════
-
-{
-  "customer_type": "individual",
-  "customer_name": "Nguyễn Văn A",
-  "business_name": null,
-  "customer_tax_code": null,
-  "customer_phone": "0901234567",
-  "customer_address": "123 Nguyễn Huệ, Quận 1, TP.HCM",
-  "business_address": null,
-  "customer_email": null,
-
-  "order_id": null,
-  "order_date": "2024-01-27",
-  "payment_method": "COD",
-  "notes": null,
-
-  "items": [
-    {
-      "line_number": 1,
-      "product_name": "Laptop Dell XPS 13",
-      "quantity": 2,
-      "unit_price": 25000000,
-      "total_price": 50000000,
-      "notes": null
-    },
-    {
-      "line_number": 2,
-      "product_name": "Chuột Logitech",
-      "quantity": 1,
-      "unit_price": 500000,
-      "total_price": 500000,
-      "notes": null
-    }
-  ],
-
-  "total_amount": 50500000,
-  "needs_review": false,
-  "review_notes": null,
-  "noise_detected": ["Chào shop!", "Có hàng không?", "😊"]
-}
-
-═══════════════════════════════════════════════
-⚠️ QUAN TRỌNG:
-═══════════════════════════════════════════════
-
-1. Nếu KHÔNG THẤY thông tin → đặt là null
-2. KHÔNG bịa đặt, KHÔNG đoán
-3. Lưu tất cả thông tin nhiễu vào noise_detected
-4. Nếu thiếu thông tin quan trọng → đặt needs_review = true
-5. CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC
-
-CHỈ TRẢ VỀ JSON, KHÔNG CÓ TEXT GIẢI THÍCH, KHÔNG CÓ MARKDOWN.
-"""
+    def _build_order_extraction_prompt_from_image(self) -> str:
+        """Build a detailed prompt for vision-based order/invoice extraction."""
+        return (
+            "You are an expert system for extracting structured order/invoice data "
+            "from images of invoices, purchase orders, receipts, or chat screenshots.\n\n"
+            "CRITICAL RULES:\n"
+            "1. Return ONLY a single valid JSON object — no markdown, no explanation.\n"
+            "2. Support both Vietnamese and English text.\n"
+            "3. Numbers MUST be plain numeric values: strip all currency symbols "
+            "(đ, ₫, VND, $, USD), thousand separators (dots or commas used as grouping), "
+            "and whitespace. Example: 'd1,250,000.0000' → 1250000, '575,000.0000' → 575000.\n"
+            "4. For tabular invoices look for columns like: Item SKU / Code, Product Description, "
+            "Qty, UOM/Unit, Unit Price, Price Extension/Total. Map them to the JSON fields below.\n"
+            "5. If a row has '*' or 'Non catalog item', still extract it.\n"
+            "6. Extract summary lines: Sub Total, Freight, Tax Amount, Discount, Total amount due.\n"
+            "7. Use null for unknown fields, [] for empty items.\n"
+            "8. Set needs_review=true when data is ambiguous.\n\n"
+            "CUSTOMER NAME RULE:\n"
+            "- customer_name is the PRIMARY name of the customer — this can be a person name "
+            "(individual) OR an organization/company name (business).\n"
+            "- Set customer_type='individual' if customer is a person, 'business' if it is "
+            "a company/organization.\n"
+            "- business_name is OPTIONAL — only use it for a short/trade name if different "
+            "from customer_name.\n\n"
+            "JSON schema to return:\n"
+            '{\n'
+            '  "customer_type": null,\n'
+            '  "customer_name": null,\n'
+            '  "business_name": null,\n'
+            '  "customer_tax_code": null,\n'
+            '  "customer_phone": null,\n'
+            '  "customer_address": null,\n'
+            '  "business_address": null,\n'
+            '  "customer_email": null,\n'
+            '  "order_id": null,\n'
+            '  "order_date": null,\n'
+            '  "payment_method": null,\n'
+            '  "notes": null,\n'
+            '  "items": [\n'
+            '    {\n'
+            '      "product_name": "string",\n'
+            '      "product_code": "string or null",\n'
+            '      "quantity": 0,\n'
+            '      "unit": "string or null",\n'
+            '      "unit_price": 0,\n'
+            '      "total_price": 0\n'
+            '    }\n'
+            '  ],\n'
+            '  "subtotal": null,\n'
+            '  "shipping": null,\n'
+            '  "tax": null,\n'
+            '  "discount": null,\n'
+            '  "total_amount": null,\n'
+            '  "currency": "VND",\n'
+            '  "needs_review": false,\n'
+            '  "review_notes": null,\n'
+            '  "noise_detected": []\n'
+            '}\n\n'
+            "Respond with ONLY the JSON object."
+        )
 
     def _build_order_extraction_prompt_from_text(self, text_content: str, additional_context: Optional[str] = None) -> str:
         """
@@ -312,83 +216,79 @@ CHỈ TRẢ VỀ JSON, KHÔNG CÓ TEXT GIẢI THÍCH, KHÔNG CÓ MARKDOWN.
         Returns:
             Prompt string
         """
-        context_str = f"\n\nTHÔNG TIN BỔ SUNG TỪ USER:\n{additional_context}" if additional_context else ""
+        context_str = (
+            f"\n\nAdditional context from user:\n{additional_context}"
+            if additional_context
+            else ""
+        )
 
-        return f"""
-BẠN LÀ CHUYÊN GIA NHẬN DIỆN ĐƠN ĐẶT HÀNG TỪ TIN NHẮN
-CÔNG CỤ NÀY DÀNH CHO NGƯỜI BÁN/SHOP để nhận diện thông tin KHÁCH HÀNG từ tin nhắn đặt hàng
+        schema = (
+            '{\n'
+            '  "customer_type": null,\n'
+            '  "customer_name": null,\n'
+            '  "business_name": null,\n'
+            '  "customer_tax_code": null,\n'
+            '  "customer_phone": null,\n'
+            '  "customer_address": null,\n'
+            '  "business_address": null,\n'
+            '  "customer_email": null,\n'
+            '  "order_id": null,\n'
+            '  "order_date": null,\n'
+            '  "payment_method": null,\n'
+            '  "notes": null,\n'
+            '  "items": [\n'
+            '    {\n'
+            '      "product_name": "string",\n'
+            '      "product_code": "string or null",\n'
+            '      "quantity": 0,\n'
+            '      "unit": "string or null",\n'
+            '      "unit_price": 0,\n'
+            '      "total_price": 0\n'
+            '    }\n'
+            '  ],\n'
+            '  "subtotal": null,\n'
+            '  "shipping": null,\n'
+            '  "tax": null,\n'
+            '  "discount": null,\n'
+            '  "total_amount": null,\n'
+            '  "currency": "VND",\n'
+            '  "needs_review": false,\n'
+            '  "review_notes": null,\n'
+            '  "noise_detected": []\n'
+            '}'
+        )
 
-NHIỆM VỤ: Trích xuất thông tin KHÁCH HÀNG và đơn đặt hàng từ text dưới đây, BỎ QUA thông tin nhiễu
+        return (
+            f"You are an expert system for extracting structured order/invoice data "
+            f"from free-text messages, emails, or pasted receipt/invoice text.\n\n"
+            f"CRITICAL RULES:\n"
+            f"1. Return ONLY a single valid JSON object — no markdown, no explanation.\n"
+            f"2. Support both Vietnamese and English text.\n"
+            f"3. Numbers MUST be plain numeric values: strip all currency symbols "
+            f"(đ, ₫, VND, $, USD), thousand separators, and whitespace. "
+            f"Example: 'd1,250,000.0000' → 1250000.\n"
+            f"4. For tabular data look for columns: Item SKU/Code, Product Description, "
+            f"Qty, UOM/Unit, Unit Price, Total. Map them to the items array.\n"
+            f"5. Extract summary: Sub Total, Freight, Tax, Discount, Total amount due.\n"
+            f"6. Use null for unknown fields, [] for empty items.\n"
+            f"7. Set needs_review=true when data is ambiguous.\n\n"
+            f"CUSTOMER NAME RULE:\n"
+            f"- customer_name is the PRIMARY name — person name (individual) OR "
+            f"organization/company name (business).\n"
+            f"- Set customer_type='individual' or 'business' accordingly.\n"
+            f"- business_name is OPTIONAL — only for short/trade name if different from customer_name.\n\n"
+            f"--- SOURCE TEXT ---\n{text_content}\n--- END TEXT ---\n"
+            f"{context_str}\n\n"
+            f"JSON schema:\n{schema}\n\n"
+            f"Respond with ONLY the JSON object."
+        )
 
-⚠️ QUAN TRỌNG: CHỈ trích xuất thông tin KHÁCH HÀNG (người đặt hàng), KHÔNG trích xuất thông tin người bán/shop
-
-═══════════════════════════════════════════════
-TEXT TIN NHẮN:
-═══════════════════════════════════════════════
-
-{text_content}
-
-{context_str}
-
-═══════════════════════════════════════════════
-HƯỚNG DẪN XỬ LÝ:
-═══════════════════════════════════════════════
-
-1. ĐỌC KỸ text trên và PHÂN BIỆT:
-   ✅ Thông tin đơn hàng (tên, SĐT, địa chỉ, sản phẩm, số lượng, giá)
-   ❌ Thông tin nhiễu (lời chào, câu hỏi, emoji, sticker text)
-
-2. TRÍCH XUẤT:
-   - customer_type: "individual" (cá nhân) hoặc "business" (doanh nghiệp)
-   - customer_name: Tên người đặt (nếu là cá nhân) hoặc người liên hệ (nếu là doanh nghiệp)
-   - business_name: Tên công ty/hộ kinh doanh (CHỈ nếu là doanh nghiệp)
-   - customer_tax_code: Mã số thuế (nếu có)
-   - customer_phone: Số điện thoại (10-11 số)
-   - customer_address: Địa chỉ GIAO HÀNG (địa chỉ nhận sản phẩm)
-   - business_address: Địa chỉ công ty/trụ sở (CHỈ nếu khác địa chỉ giao hàng)
-   - customer_email: Email (nếu có)
-   - order_id: Mã đơn hàng (nếu có)
-   - order_date: Ngày đặt (format YYYY-MM-DD)
-   - payment_method: COD/Chuyển khoản/Tiền mặt
-   - items: Danh sách sản phẩm với quantity, price
-
-3. LƯU NHIỄU vào noise_detected array
-
-4. Nếu thiếu thông tin quan trọng → needs_review = true
-
-═══════════════════════════════════════════════
-FORMAT JSON TRẢ VỀ:
-═══════════════════════════════════════════════
-
-{{
-  "customer_type": null,
-  "customer_name": null,
-  "business_name": null,
-  "customer_tax_code": null,
-  "customer_phone": null,
-  "customer_address": null,
-  "business_address": null,
-  "customer_email": null,
-  "order_id": null,
-  "order_date": null,
-  "payment_method": null,
-  "notes": null,
-  "items": [],
-  "total_amount": null,
-  "needs_review": false,
-  "review_notes": null,
-  "noise_detected": []
-}}
-
-CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
-"""
-
-    async def process_image_order(self, image_path: str) -> Dict[str, Any]:
+    async def process_image_order(self, image_path: str, model_override: Optional[str] = None) -> Dict[str, Any]:
         """
-        Nhận diện đơn hàng từ ảnh screenshot tin nhắn
+        Nhận diện đơn hàng từ ảnh screenshot tin nhắn hoặc file PDF/HTML
 
         Args:
-            image_path: Đường dẫn ảnh
+            image_path: Đường dẫn ảnh hoặc file
 
         Returns:
             Dict kết quả nhận diện
@@ -396,7 +296,28 @@ CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
         start_time = time.time()
 
         try:
-            logger.info(f"🔍 Bắt đầu nhận diện đơn hàng từ ảnh: {image_path}")
+            file_extension = Path(image_path).suffix.lower()
+            
+            # Kiểm tra loại file
+            if file_extension in ['.pdf']:
+                logger.info(f"🔍 Bắt đầu nhận diện đơn hàng từ PDF: {image_path}")
+                # Trích xuất text từ PDF và xử lý như text
+                text_content = self._extract_text_from_pdf(image_path)
+                from backend.order import TextOrderInput
+                text_input = TextOrderInput(message_text=text_content)
+                return await self.process_text_order(text_input, model_override=model_override)
+                
+            elif file_extension in ['.html', '.htm']:
+                logger.info(f"🔍 Bắt đầu nhận diện đơn hàng từ HTML: {image_path}")
+                # Trích xuất text từ HTML và xử lý như text
+                text_content = self._extract_text_from_html(image_path)
+                from backend.order import TextOrderInput
+                text_input = TextOrderInput(message_text=text_content)
+                return await self.process_text_order(text_input, model_override=model_override)
+            
+            else:
+                # Xử lý như ảnh
+                logger.info(f"🔍 Bắt đầu nhận diện đơn hàng từ ảnh: {image_path}")
 
             # Encode ảnh
             image_data_uri = self._encode_image_to_base64(image_path)
@@ -405,8 +326,9 @@ CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
             prompt = self._build_order_extraction_prompt_from_image()
 
             # Gọi OpenAI Vision API
+            model_to_use = model_override or self.model
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=model_to_use,
                 messages=[
                     {
                         "role": "user",
@@ -468,7 +390,7 @@ CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
                 "processing_time": time.time() - start_time
             }
 
-    async def process_text_order(self, text_input: TextOrderInput) -> Dict[str, Any]:
+    async def process_text_order(self, text_input: TextOrderInput, model_override: Optional[str] = None) -> Dict[str, Any]:
         """
         Nhận diện đơn hàng từ text tin nhắn
 
@@ -490,8 +412,9 @@ CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
             )
 
             # Gọi OpenAI API
+            model_to_use = model_override or self.model
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=model_to_use,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=self.max_tokens,
                 temperature=0.1
@@ -598,20 +521,31 @@ CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
         # 2. Validate items
         for idx, item in enumerate(raw_data.get("items", []), 1):
             try:
+                # Helper to safely get decimal
+                def get_safe_decimal(value):
+                    if value is None or value == "" or value == "null":
+                        return None
+                    try:
+                        clean_val = str(value).replace(",", "").replace(" ", "").strip()
+                        if not clean_val or clean_val.lower() in ['none', 'null', 'n/a']:
+                            return None
+                        return Decimal(clean_val)
+                    except:
+                        return None
+                
                 # Validate quantity
-                quantity = Decimal(str(item.get("quantity", 0)))
-                if quantity <= 0:
+                quantity = get_safe_decimal(item.get("quantity", 0))
+                if quantity and quantity <= 0:
                     warnings.append(f"Item {idx}: Số lượng <= 0")
                     raw_data["needs_review"] = True
 
                 # Validate price
-                unit_price = item.get("unit_price")
-                total_price = item.get("total_price")
+                unit_price = get_safe_decimal(item.get("unit_price"))
+                total_price = get_safe_decimal(item.get("total_price"))
 
-                if unit_price and total_price:
-                    expected_total = quantity * Decimal(str(unit_price))
-                    actual_total = Decimal(str(total_price))
-                    if abs(expected_total - actual_total) > Decimal("1"):
+                if quantity and unit_price and total_price:
+                    expected_total = quantity * unit_price
+                    if abs(expected_total - total_price) > Decimal("1"):
                         warnings.append(f"Item {idx}: {quantity} × {unit_price} ≠ {total_price}")
                         # Auto fix
                         item["total_price"] = str(expected_total)
@@ -647,19 +581,43 @@ CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
         """
         # Parse items
         items = []
-        for item_dict in raw_data.get("items", []):
+        for idx, item_dict in enumerate(raw_data.get("items", []), 1):
             try:
+                # Helper function to safely convert to Decimal
+                def safe_decimal(value, default=None):
+                    if value is None or value == "" or value == "null":
+                        return default
+                    try:
+                        # Remove commas and spaces
+                        clean_value = str(value).replace(",", "").replace(" ", "").strip()
+                        if not clean_value or clean_value.lower() in ['none', 'null', 'n/a']:
+                            return default
+                        return Decimal(clean_value)
+                    except:
+                        return default
+                
+                quantity_val = safe_decimal(item_dict.get("quantity"), Decimal('0'))
+                unit_price_val = safe_decimal(item_dict.get("unit_price"), None)
+                total_price_val = safe_decimal(item_dict.get("total_price"), None)
+                
+                # Handle both 'name'/'product_name' and 'code'/'product_code' from AI
+                product_name = item_dict.get("product_name") or item_dict.get("name") or ""
+                product_code = item_dict.get("product_code") or item_dict.get("code")
+                unit = item_dict.get("unit") or item_dict.get("uom")
+
                 item = OrderItemData(
-                    line_number=item_dict.get("line_number", 0),
-                    product_name=item_dict.get("product_name", ""),
-                    quantity=Decimal(str(item_dict.get("quantity", 0))),
-                    unit_price=Decimal(str(item_dict.get("unit_price", 0))) if item_dict.get("unit_price") else None,
-                    total_price=Decimal(str(item_dict.get("total_price", 0))) if item_dict.get("total_price") else None,
+                    line_number=item_dict.get("line_number", idx),
+                    product_code=product_code,
+                    product_name=product_name,
+                    quantity=quantity_val,
+                    unit=unit,
+                    unit_price=unit_price_val,
+                    total_price=total_price_val,
                     notes=item_dict.get("notes")
                 )
                 items.append(item)
             except Exception as e:
-                logger.warning(f"⚠️ Lỗi parse item: {str(e)}")
+                logger.warning(f"⚠️ Lỗi parse item {idx}: {str(e)} - Data: {item_dict}")
 
         # Parse date
         order_date = None
@@ -672,8 +630,21 @@ CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
             except Exception as e:
                 logger.warning(f"⚠️ Lỗi parse date: {str(e)}")
 
+        # Helper function to safely convert to Decimal
+        def safe_decimal(value, default=None):
+            if value is None or value == "" or value == "null":
+                return default
+            try:
+                clean_value = str(value).replace(",", "").replace(" ", "").strip()
+                if not clean_value or clean_value.lower() in ['none', 'null', 'n/a']:
+                    return default
+                return Decimal(clean_value)
+            except:
+                return default
+
         # Create OrderData
         order_data = OrderData(
+            customer_id=raw_data.get("customer_id"),
             customer_type=raw_data.get("customer_type"),
             customer_name=raw_data.get("customer_name"),
             business_name=raw_data.get("business_name"),
@@ -684,10 +655,11 @@ CHỈ TRẢ VỀ JSON, KHÔNG TEXT KHÁC.
             customer_email=raw_data.get("customer_email"),
             order_id=raw_data.get("order_id"),
             order_date=order_date,
+            status=raw_data.get("status"),
             payment_method=raw_data.get("payment_method"),
             notes=raw_data.get("notes"),
             items=items,
-            total_amount=Decimal(str(raw_data.get("total_amount", 0))) if raw_data.get("total_amount") else None,
+            total_amount=safe_decimal(raw_data.get("total_amount"), None),
             processing_time=processing_time,
             needs_review=raw_data.get("needs_review", False),
             review_notes=raw_data.get("review_notes"),

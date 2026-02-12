@@ -14,8 +14,17 @@ loguru==0.7.3
 python-multipart==0.0.20
 Pillow==11.1.0
 
+# PDF processing
+PyPDF2==3.0.1
+pdfplumber==0.11.0
+
+# HTML processing
+beautifulsoup4==4.12.3
+lxml==5.1.0
+
 # Excel export
 openpyxl==3.1.5
+pandas==2.2.0
 
 # Database (PostgreSQL)
 psycopg2-binary==2.9.10

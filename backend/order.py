@@ -13,8 +13,10 @@ class OrderItemData(BaseModel):
     """Chi tiết sản phẩm trong đơn hàng"""
 
     line_number: int = Field(description="Số thứ tự dòng sản phẩm")
+    product_code: Optional[str] = Field(None, description="Mã sản phẩm")
     product_name: str = Field(description="Tên sản phẩm")
     quantity: Decimal = Field(default=Decimal('0'), description="Số lượng")
+    unit: Optional[str] = Field(None, description="Đơn vị tính (cái, kg, hộp, ...)")
     unit_price: Optional[Decimal] = Field(None, description="Đơn giá")
     total_price: Optional[Decimal] = Field(None, description="Thành tiền")
     notes: Optional[str] = Field(None, description="Ghi chú cho sản phẩm")
@@ -31,9 +33,10 @@ class OrderData(BaseModel):
     """
 
     # ===== Thông tin khách hàng =====
-    customer_type: Optional[str] = Field(None, description="Loại khách hàng: 'individual' (cá nhân) hoặc 'business' (doanh nghiệp/hộ kinh doanh)")
-    customer_name: Optional[str] = Field(None, description="Tên khách hàng cá nhân")
-    business_name: Optional[str] = Field(None, description="Tên công ty/hộ kinh doanh (nếu là doanh nghiệp)")
+    customer_id: Optional[str] = Field(None, description="Mã khách hàng")
+    customer_type: Optional[str] = Field(None, description="Loại khách hàng: 'individual' (cá nhân) hoặc 'business' (tổ chức/doanh nghiệp)")
+    customer_name: Optional[str] = Field(None, description="Tên khách hàng - là tên cá nhân nếu customer_type='individual', hoặc tên tổ chức/doanh nghiệp nếu customer_type='business'")
+    business_name: Optional[str] = Field(None, description="Tên viết tắt hoặc tên thương hiệu (nếu khác tên chính thức trong customer_name)")
     customer_tax_code: Optional[str] = Field(None, description="Mã số thuế (MST) của khách hàng/doanh nghiệp")
     customer_phone: Optional[str] = Field(None, description="Số điện thoại liên hệ")
     customer_address: Optional[str] = Field(None, description="Địa chỉ giao hàng (địa chỉ nhận sản phẩm)")
@@ -43,6 +46,7 @@ class OrderData(BaseModel):
     # ===== Thông tin đơn hàng =====
     order_id: Optional[str] = Field(None, description="Mã đơn hàng")
     order_date: Optional[date] = Field(None, description="Ngày đặt hàng")
+    status: Optional[str] = Field(None, description="Trạng thái đơn hàng (pending, confirmed, shipping, completed, cancelled)")
     payment_method: Optional[str] = Field(None, description="Phương thức thanh toán (COD, Chuyển khoản...)")
     notes: Optional[str] = Field(None, description="Ghi chú đơn hàng")
 

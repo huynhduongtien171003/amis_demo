@@ -23,14 +23,14 @@ class Settings(BaseSettings):
     
     # OpenAI API settings
     openai_api_key: str = Field(..., description="API key của OpenAI")
-    openai_model: str = Field(default="gpt-4o", description="Model OpenAI")
+    openai_model: str = Field(default="gpt-5", description="Model OpenAI")
     openai_max_tokens: int = Field(default=4096, description="Số token tối đa")
     
     # File storage settings
     upload_dir: str = Field(default="./uploads", description="Thư mục upload")
     output_dir: str = Field(default="./outputs", description="Thư mục output")
     max_file_size: int = Field(default=10485760, description="Kích thước file tối đa (bytes)")
-    allowed_extensions: str = Field(default="jpg,jpeg,png,pdf", description="Định dạng cho phép")
+    allowed_extensions: str = Field(default="jpg,jpeg,png,pdf,html,htm", description="Định dạng cho phép")
     
     # Security settings
     secret_key: str = Field(default="change-me-in-production", description="Secret key")
