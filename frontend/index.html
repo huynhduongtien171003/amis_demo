@@ -1081,7 +1081,9 @@
         ch += infoItem(
           "T\u00ean kh\u00e1ch h\u00e0ng",
           data.customer_name,
-          data.customer_type === "business" ? "T\u00ean t\u1ed5 ch\u1ee9c / c\u00f4ng ty" : "H\u1ecd v\u00e0 t\u00ean",
+          data.customer_type === "business"
+            ? "T\u00ean t\u1ed5 ch\u1ee9c / c\u00f4ng ty"
+            : "H\u1ecd v\u00e0 t\u00ean",
           true,
           true,
         );
@@ -1201,7 +1203,11 @@
         }
       }
       async function saveAsExcel() {
-        if (!currentJobId) return showAlert("Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u \u0111\u1ec3 l\u01b0u!", "error");
+        if (!currentJobId)
+          return showAlert(
+            "Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u \u0111\u1ec3 l\u01b0u!",
+            "error",
+          );
         try {
           const r = await fetch(
             "/api/export/order/" + currentJobId + "/excel",
