@@ -12,10 +12,11 @@ import base64
 import json
 import time
 import re
+import unicodedata
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 from decimal import Decimal
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from openai import OpenAI
 from loguru import logger
@@ -146,6 +147,7 @@ class OrderRecognitionService:
 
     def _build_order_extraction_prompt_from_image(self) -> str:
         """Build a detailed prompt for vision-based order/invoice extraction."""
+        current_date = date.today().isoformat()
         return (
             "You are an expert system for extracting structured order/invoice data "
             "from images of invoices, purchase orders, receipts, or chat screenshots.\n\n"
@@ -160,7 +162,11 @@ class OrderRecognitionService:
             "5. If a row has '*' or 'Non catalog item', still extract it.\n"
             "6. Extract summary lines: Sub Total, Freight, Tax Amount, Discount, Total amount due.\n"
             "7. Use null for unknown fields, [] for empty items.\n"
-            "8. Set needs_review=true when data is ambiguous.\n\n"
+            "8. Interpret relative date phrases (e.g., 'hôm nay', 'mai', 'mốt', 'thứ 2', 'tuần sau') "
+            f"based on current date {current_date} and convert to exact YYYY-MM-DD for order_date/delivery_date.\n"
+            "9. If source contains delivery time (e.g., '8h', '8:30', '14h15'), set delivery_time as HH:MM.\n"
+            "10. If there are multiple delivery schedules in one message/image, split into multiple orders in field orders[].\n"
+            "11. Set needs_review=true when data is ambiguous.\n\n"
             "CUSTOMER NAME RULE:\n"
             "- customer_name is the PRIMARY name of the customer — this can be a person name "
             "(individual) OR an organization/company name (business).\n"
@@ -180,6 +186,8 @@ class OrderRecognitionService:
             '  "customer_email": null,\n'
             '  "order_id": null,\n'
             '  "order_date": null,\n'
+            '  "delivery_date": null,\n'
+            '  "delivery_time": null,\n'
             '  "payment_method": null,\n'
             '  "notes": null,\n'
             '  "items": [\n'
@@ -201,6 +209,17 @@ class OrderRecognitionService:
             '  "needs_review": false,\n'
             '  "review_notes": null,\n'
             '  "noise_detected": []\n'
+            '  ,"orders": [\n'
+            '    {\n'
+            '      "order_id": "string or null",\n'
+            '      "order_date": "YYYY-MM-DD or null",\n'
+            '      "delivery_date": "YYYY-MM-DD or null",\n'
+            '      "delivery_time": "HH:MM or null",\n'
+            '      "payment_method": "string or null",\n'
+            '      "notes": "string or null",\n'
+            '      "items": []\n'
+            '    }\n'
+            '  ]\n'
             '}\n\n'
             "Respond with ONLY the JSON object."
         )
@@ -234,6 +253,8 @@ class OrderRecognitionService:
             '  "customer_email": null,\n'
             '  "order_id": null,\n'
             '  "order_date": null,\n'
+            '  "delivery_date": null,\n'
+            '  "delivery_time": null,\n'
             '  "payment_method": null,\n'
             '  "notes": null,\n'
             '  "items": [\n'
@@ -258,6 +279,8 @@ class OrderRecognitionService:
             '}'
         )
 
+        current_date = date.today().isoformat()
+
         return (
             f"You are an expert system for extracting structured order/invoice data "
             f"from free-text messages, emails, or pasted receipt/invoice text.\n\n"
@@ -271,7 +294,11 @@ class OrderRecognitionService:
             f"Qty, UOM/Unit, Unit Price, Total. Map them to the items array.\n"
             f"5. Extract summary: Sub Total, Freight, Tax, Discount, Total amount due.\n"
             f"6. Use null for unknown fields, [] for empty items.\n"
-            f"7. Set needs_review=true when data is ambiguous.\n\n"
+            f"7. Interpret relative date phrases (e.g., 'hôm nay', 'mai', 'mốt', 'thứ 2', 'tuần sau') "
+            f"based on current date {current_date} and convert to exact YYYY-MM-DD for order_date/delivery_date.\n"
+            f"8. If source contains delivery time (e.g., '8h', '8:30', '14h15'), set delivery_time as HH:MM.\n"
+            f"9. If there are multiple delivery schedules in one message, split into multiple orders in field orders[].\n"
+            f"10. Set needs_review=true when data is ambiguous.\n\n"
             f"CUSTOMER NAME RULE:\n"
             f"- customer_name is the PRIMARY name — person name (individual) OR "
             f"organization/company name (business).\n"
@@ -282,6 +309,386 @@ class OrderRecognitionService:
             f"JSON schema:\n{schema}\n\n"
             f"Respond with ONLY the JSON object."
         )
+
+    def _normalize_text_for_date(self, text: str) -> str:
+        """Normalize text for flexible Vietnamese date matching."""
+        lowered_text = text.lower().strip()
+        normalized_text = unicodedata.normalize("NFD", lowered_text)
+        normalized_text = ''.join(
+            char for char in normalized_text
+            if unicodedata.category(char) != 'Mn'
+        )
+        normalized_text = re.sub(r"\s+", " ", normalized_text)
+        return normalized_text
+
+    def _resolve_weekday_date(self, target_weekday: int, reference_date: date, force_next_week: bool = False) -> date:
+        """Resolve next/this weekday date from reference date."""
+        day_delta = (target_weekday - reference_date.weekday()) % 7
+        if force_next_week:
+            day_delta += 7
+        return reference_date + timedelta(days=day_delta)
+
+    def _parse_order_date(self, date_value: Any, reference_date: Optional[date] = None) -> Optional[date]:
+        """Parse order date from absolute/relative Vietnamese text."""
+        if reference_date is None:
+            reference_date = date.today()
+
+        if date_value is None:
+            return None
+
+        if isinstance(date_value, datetime):
+            return date_value.date()
+
+        if isinstance(date_value, date):
+            return date_value
+
+        date_text = str(date_value).strip()
+        if not date_text:
+            return None
+
+        normalized_text = self._normalize_text_for_date(date_text)
+        raw_lower_text = date_text.lower()
+
+        # Relative keywords
+        if re.search(r"\b(hom nay|today|hnay)\b", normalized_text):
+            return reference_date
+
+        if re.search(r"\b(ngay mai|mai|tomorrow)\b", normalized_text):
+            return reference_date + timedelta(days=1)
+
+        if "mốt" in raw_lower_text or re.search(r"\b(ngay mot|day after tomorrow)\b", normalized_text):
+            return reference_date + timedelta(days=2)
+
+        if re.search(r"\b(ngay kia)\b", normalized_text):
+            return reference_date + timedelta(days=2)
+
+        day_offset_match = re.search(r"\b(\d{1,2})\s*ngay\s*(nua|toi|sau)\b", normalized_text)
+        if day_offset_match:
+            return reference_date + timedelta(days=int(day_offset_match.group(1)))
+
+        # Weekday phrases
+        weekday_map = {
+            "2": 0,
+            "3": 1,
+            "4": 2,
+            "5": 3,
+            "6": 4,
+            "7": 5,
+        }
+        weekday_match = re.search(r"\bthu\s*([2-7])\b", normalized_text)
+        if weekday_match:
+            force_next_week = "tuan sau" in normalized_text
+            target_weekday = weekday_map[weekday_match.group(1)]
+            return self._resolve_weekday_date(target_weekday, reference_date, force_next_week)
+
+        if re.search(r"\b(chu nhat|cn)\b", normalized_text):
+            force_next_week = "tuan sau" in normalized_text
+            return self._resolve_weekday_date(6, reference_date, force_next_week)
+
+        week_offset_match = re.search(r"\b(\d{1,2})\s*tuan\s*(nua|toi|sau)\b", normalized_text)
+        if week_offset_match:
+            return reference_date + timedelta(weeks=int(week_offset_match.group(1)))
+
+        if re.search(r"\b(tuan sau|next week)\b", normalized_text):
+            return reference_date + timedelta(days=7)
+
+        # Numeric formats: YYYY-MM-DD / YYYY/MM/DD / YYYY.MM.DD
+        year_first_match = re.search(r"\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\b", normalized_text)
+        if year_first_match:
+            year_value, month_value, day_value = map(int, year_first_match.groups())
+            try:
+                return date(year_value, month_value, day_value)
+            except ValueError:
+                return None
+
+        # Numeric formats: DD-MM-YYYY / DD/MM/YYYY / DD.MM.YYYY
+        day_first_match = re.search(r"\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\b", normalized_text)
+        if day_first_match:
+            day_value, month_value, year_value = map(int, day_first_match.groups())
+            try:
+                return date(year_value, month_value, day_value)
+            except ValueError:
+                return None
+
+        # Numeric formats: DD-MM / DD/MM / DD.MM (assume current year, roll to next year if already passed)
+        short_date_match = re.search(r"\b(\d{1,2})[-/.](\d{1,2})\b", normalized_text)
+        if short_date_match:
+            day_value, month_value = map(int, short_date_match.groups())
+            try:
+                resolved_date = date(reference_date.year, month_value, day_value)
+                if resolved_date < reference_date:
+                    resolved_date = date(reference_date.year + 1, month_value, day_value)
+                return resolved_date
+            except ValueError:
+                return None
+
+        # Vietnamese textual format: ngày 12 tháng 3 năm 2026 / 12 tháng 3
+        vi_full_match = re.search(
+            r"\b(?:ngay\s*)?(\d{1,2})\s*thang\s*(\d{1,2})(?:\s*nam\s*(\d{4}))?\b",
+            normalized_text
+        )
+        if vi_full_match:
+            day_value = int(vi_full_match.group(1))
+            month_value = int(vi_full_match.group(2))
+            year_value = int(vi_full_match.group(3)) if vi_full_match.group(3) else reference_date.year
+            try:
+                resolved_date = date(year_value, month_value, day_value)
+                if vi_full_match.group(3) is None and resolved_date < reference_date:
+                    resolved_date = date(reference_date.year + 1, month_value, day_value)
+                return resolved_date
+            except ValueError:
+                return None
+
+        return None
+
+    def _parse_delivery_time(self, time_value: Any) -> Optional[str]:
+        """Parse delivery time from text and normalize to HH:MM format."""
+        if time_value is None:
+            return None
+
+        if isinstance(time_value, datetime):
+            return time_value.strftime("%H:%M")
+
+        time_text = str(time_value).strip()
+        if not time_text:
+            return None
+
+        normalized_text = self._normalize_text_for_date(time_text)
+
+        # 14:30 / 14.30
+        hour_minute_match = re.search(r"\b([01]?\d|2[0-3])[:.]([0-5]?\d)\b", normalized_text)
+        if hour_minute_match:
+            hour_value = int(hour_minute_match.group(1))
+            minute_value = int(hour_minute_match.group(2))
+            return f"{hour_value:02d}:{minute_value:02d}"
+
+        # 8h30 / 8h / 8 gio 30
+        hour_h_match = re.search(r"\b([01]?\d|2[0-3])\s*(?:h|gio)(?:\s*([0-5]?\d))?\b", normalized_text)
+        if hour_h_match:
+            hour_value = int(hour_h_match.group(1))
+            minute_value = int(hour_h_match.group(2)) if hour_h_match.group(2) else 0
+            return f"{hour_value:02d}:{minute_value:02d}"
+
+        return None
+
+    def _infer_delivery_schedule_from_text(
+        self,
+        message_text: str,
+        additional_context: Optional[str] = None
+    ) -> Dict[str, Optional[str]]:
+        """Fallback inference for delivery date/time from source text."""
+        combined_text = message_text or ""
+        if additional_context:
+            combined_text = f"{combined_text}\n{additional_context}"
+
+        if not combined_text.strip():
+            return {"delivery_date": None, "delivery_time": None}
+
+        # Ưu tiên các đoạn gần từ khóa giao hàng
+        delivery_keyword_pattern = r"\b(giao|giao hang|ship|delivery|deliver)\b"
+        segments = [
+            segment.strip()
+            for segment in re.split(r"[\n\r]+|(?<=[.!?;])\s+", combined_text)
+            if segment and segment.strip()
+        ]
+
+        candidates: List[tuple[Optional[date], Optional[str], int]] = []
+
+        for idx, segment in enumerate(segments):
+            if re.search(delivery_keyword_pattern, self._normalize_text_for_date(segment)):
+                window_parts = []
+                if idx > 0:
+                    window_parts.append(segments[idx - 1])
+                window_parts.append(segment)
+                if idx < len(segments) - 1:
+                    window_parts.append(segments[idx + 1])
+
+                window_text = " ".join(window_parts)
+                candidate_date = self._parse_order_date(window_text)
+                candidate_time = self._parse_delivery_time(window_text)
+                candidates.append((candidate_date, candidate_time, idx))
+
+        # Chọn candidate tốt nhất: ưu tiên có cả ngày+giờ, sau đó ưu tiên đoạn xuất hiện sau
+        best_date: Optional[date] = None
+        best_time: Optional[str] = None
+        best_score = -1
+        best_idx = -1
+
+        for candidate_date, candidate_time, idx in candidates:
+            score = (2 if candidate_date else 0) + (1 if candidate_time else 0)
+            if score > best_score or (score == best_score and idx > best_idx):
+                best_score = score
+                best_idx = idx
+                best_date = candidate_date
+                best_time = candidate_time
+
+        # Fallback toàn văn nếu chưa đủ thông tin
+        if not best_date:
+            best_date = self._parse_order_date(combined_text)
+        if not best_time:
+            best_time = self._parse_delivery_time(combined_text)
+
+        return {
+            "delivery_date": best_date.isoformat() if best_date else None,
+            "delivery_time": best_time
+        }
+
+    def _extract_order_candidates(self, parsed_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract one or many order candidates from model output."""
+        raw_orders = parsed_data.get("orders")
+        if not isinstance(raw_orders, list) or not raw_orders:
+            return [parsed_data]
+
+        shared_fields = {
+            key: value
+            for key, value in parsed_data.items()
+            if key != "orders"
+        }
+
+        candidates: List[Dict[str, Any]] = []
+        for order_candidate in raw_orders:
+            if not isinstance(order_candidate, dict):
+                continue
+
+            merged_data = dict(shared_fields)
+            merged_data.update(order_candidate)
+            if merged_data.get("items") is None:
+                merged_data["items"] = []
+            candidates.append(merged_data)
+
+        return candidates or [parsed_data]
+
+    def _append_review_note(self, raw_data: Dict[str, Any], note: str) -> None:
+        """Append review note without duplication."""
+        current_review_notes = (raw_data.get("review_notes") or "").strip()
+        if not current_review_notes:
+            raw_data["review_notes"] = note
+            return
+
+        split_notes = [part.strip() for part in current_review_notes.split(";") if part.strip()]
+        if note not in split_notes:
+            split_notes.append(note)
+        raw_data["review_notes"] = "; ".join(split_notes)
+
+    def _process_order_candidates(
+        self,
+        parsed_data: Dict[str, Any],
+        processing_time: float,
+        source_text: Optional[str] = None,
+        additional_context: Optional[str] = None,
+    ) -> List[OrderData]:
+        """Process one or many order candidates into OrderData list."""
+        candidates = self._extract_order_candidates(parsed_data)
+        order_models: List[OrderData] = []
+
+        for candidate in candidates:
+            validated_candidate = self._validate_order_data(candidate)
+            validated_candidate = self._apply_date_time_fallbacks(
+                validated_candidate,
+                source_text=source_text,
+                additional_context=additional_context,
+            )
+            order_models.append(self._convert_to_order_data(validated_candidate, processing_time))
+
+        if len(order_models) > 1:
+            split_note = f"Đã tách {len(order_models)} đơn theo lịch giao hàng"
+            for order_model in order_models:
+                order_model.needs_review = True
+                existing_note = (order_model.review_notes or "").strip()
+                order_model.review_notes = f"{existing_note}; {split_note}".strip("; ") if existing_note else split_note
+
+        return order_models
+
+    def _collect_date_time_candidate_text(self, raw_data: Dict[str, Any], source_text: Optional[str] = None) -> str:
+        """Collect text candidates for date/time fallback parsing."""
+        text_candidates: List[str] = []
+        if source_text:
+            text_candidates.append(source_text)
+
+        for key in [
+            "notes",
+            "review_notes",
+            "order_date",
+            "delivery_date",
+            "delivery_time",
+            "payment_method",
+        ]:
+            value = raw_data.get(key)
+            if value is not None:
+                text_candidates.append(str(value))
+
+        for item in raw_data.get("items", []):
+            if isinstance(item, dict):
+                for item_key in ["notes", "product_name", "name"]:
+                    item_value = item.get(item_key)
+                    if item_value:
+                        text_candidates.append(str(item_value))
+
+        # JSON flatten as last-resort signal (still plain text)
+        text_candidates.append(json.dumps(raw_data, ensure_ascii=False))
+        return "\n".join(text_candidates)
+
+    def _apply_date_time_fallbacks(
+        self,
+        raw_data: Dict[str, Any],
+        source_text: Optional[str] = None,
+        additional_context: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Apply robust fallback inference for order/delivery date-time fields."""
+        parsed_order_date = self._parse_order_date(raw_data.get("order_date"))
+        parsed_delivery_date = self._parse_order_date(raw_data.get("delivery_date"))
+        parsed_delivery_time = self._parse_delivery_time(raw_data.get("delivery_time"))
+
+        combined_source = source_text or ""
+        if additional_context:
+            combined_source = f"{combined_source}\n{additional_context}".strip()
+
+        # Fallback order_date from source text (mainly text flow)
+        if not parsed_order_date and combined_source:
+            inferred_order_date = self._infer_order_date_from_text(combined_source)
+            if inferred_order_date:
+                raw_data["order_date"] = inferred_order_date.isoformat()
+                parsed_order_date = inferred_order_date
+
+        # Fallback delivery schedule from all candidate text (works for both text/image)
+        if not parsed_delivery_date or not parsed_delivery_time:
+            candidate_text = self._collect_date_time_candidate_text(raw_data, combined_source)
+            inferred_delivery = self._infer_delivery_schedule_from_text(candidate_text)
+
+            if not parsed_delivery_date and inferred_delivery["delivery_date"]:
+                raw_data["delivery_date"] = inferred_delivery["delivery_date"]
+                parsed_delivery_date = self._parse_order_date(raw_data.get("delivery_date"))
+
+            if not parsed_delivery_time and inferred_delivery["delivery_time"]:
+                raw_data["delivery_time"] = inferred_delivery["delivery_time"]
+                parsed_delivery_time = self._parse_delivery_time(raw_data.get("delivery_time"))
+
+        # If only delivery_time found but no delivery_date, reuse order_date when available
+        if not parsed_delivery_date and parsed_delivery_time and parsed_order_date:
+            raw_data["delivery_date"] = parsed_order_date.isoformat()
+
+        return raw_data
+
+    def _infer_order_date_from_text(self, message_text: str, additional_context: Optional[str] = None) -> Optional[date]:
+        """Fallback inference for order date directly from source text."""
+        combined_text = message_text or ""
+        if additional_context:
+            combined_text = f"{combined_text}\n{additional_context}"
+
+        if not combined_text.strip():
+            return None
+
+        normalized_text = self._normalize_text_for_date(combined_text)
+        has_date_signal = bool(re.search(
+            r"\b(hom nay|ngay mai|mai|ngay mot|ngay kia|thu\s*[2-7]|chu nhat|cn|"
+            r"\d{1,2}\s*ngay\s*(nua|toi|sau)|\d{1,2}[-/.]\d{1,2}(?:[-/.]\d{4})?|"
+            r"\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}\s*thang\s*\d{1,2})\b",
+            normalized_text
+        ))
+        if not has_date_signal:
+            return None
+
+        return self._parse_order_date(combined_text)
 
     async def process_image_order(self, image_path: str, model_override: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -369,15 +776,17 @@ class OrderRecognitionService:
                     "processing_time": processing_time
                 }
 
-            # Validate và fix
-            validated_data = self._validate_order_data(parsed_data)
-
-            # Convert to OrderData
-            order_data = self._convert_to_order_data(validated_data, processing_time)
+            # Xử lý một hoặc nhiều đơn hàng
+            orders = self._process_order_candidates(
+                parsed_data,
+                processing_time,
+            )
+            order_data = orders[0] if orders else None
 
             return {
                 "success": True,
                 "data": order_data,
+                "orders": orders,
                 "raw_response": response_text,
                 "processing_time": processing_time
             }
@@ -437,15 +846,19 @@ class OrderRecognitionService:
                     "processing_time": processing_time
                 }
 
-            # Validate và fix
-            validated_data = self._validate_order_data(parsed_data)
-
-            # Convert to OrderData
-            order_data = self._convert_to_order_data(validated_data, processing_time)
+            # Xử lý một hoặc nhiều đơn hàng
+            orders = self._process_order_candidates(
+                parsed_data,
+                processing_time,
+                source_text=text_input.message_text,
+                additional_context=text_input.additional_context
+            )
+            order_data = orders[0] if orders else None
 
             return {
                 "success": True,
                 "data": order_data,
+                "orders": orders,
                 "raw_response": response_text,
                 "processing_time": processing_time
             }
@@ -620,15 +1033,17 @@ class OrderRecognitionService:
                 logger.warning(f"⚠️ Lỗi parse item {idx}: {str(e)} - Data: {item_dict}")
 
         # Parse date
-        order_date = None
-        if raw_data.get("order_date"):
-            try:
-                if isinstance(raw_data["order_date"], str):
-                    order_date = datetime.strptime(raw_data["order_date"], "%Y-%m-%d").date()
-                elif isinstance(raw_data["order_date"], date):
-                    order_date = raw_data["order_date"]
-            except Exception as e:
-                logger.warning(f"⚠️ Lỗi parse date: {str(e)}")
+        order_date = self._parse_order_date(raw_data.get("order_date"))
+        if raw_data.get("order_date") and not order_date:
+            logger.warning(f"⚠️ Lỗi parse date: {raw_data.get('order_date')}")
+
+        delivery_date = self._parse_order_date(raw_data.get("delivery_date"))
+        if raw_data.get("delivery_date") and not delivery_date:
+            logger.warning(f"⚠️ Lỗi parse delivery_date: {raw_data.get('delivery_date')}")
+
+        delivery_time = self._parse_delivery_time(raw_data.get("delivery_time"))
+        if raw_data.get("delivery_time") and not delivery_time:
+            logger.warning(f"⚠️ Lỗi parse delivery_time: {raw_data.get('delivery_time')}")
 
         # Helper function to safely convert to Decimal
         def safe_decimal(value, default=None):
@@ -655,6 +1070,8 @@ class OrderRecognitionService:
             customer_email=raw_data.get("customer_email"),
             order_id=raw_data.get("order_id"),
             order_date=order_date,
+            delivery_date=delivery_date,
+            delivery_time=delivery_time,
             status=raw_data.get("status"),
             payment_method=raw_data.get("payment_method"),
             notes=raw_data.get("notes"),

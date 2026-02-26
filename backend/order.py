@@ -46,6 +46,8 @@ class OrderData(BaseModel):
     # ===== Thông tin đơn hàng =====
     order_id: Optional[str] = Field(None, description="Mã đơn hàng")
     order_date: Optional[date] = Field(None, description="Ngày đặt hàng")
+    delivery_date: Optional[date] = Field(None, description="Ngày giao hàng")
+    delivery_time: Optional[str] = Field(None, description="Khung giờ giao hàng (ví dụ: 14:30, chiều, tối)")
     status: Optional[str] = Field(None, description="Trạng thái đơn hàng (pending, confirmed, shipping, completed, cancelled)")
     payment_method: Optional[str] = Field(None, description="Phương thức thanh toán (COD, Chuyển khoản...)")
     notes: Optional[str] = Field(None, description="Ghi chú đơn hàng")
@@ -90,6 +92,8 @@ class OrderResponse(BaseModel):
     job_id: Optional[str] = Field(None, description="ID công việc để tra cứu sau")
     status: str = Field(description="Trạng thái: 'completed', 'processing', 'error'")
     data: Optional[OrderData] = Field(None, description="Dữ liệu đơn hàng đã trích xuất")
+    orders: List[OrderData] = Field(default_factory=list, description="Danh sách đơn hàng đã tách (nếu có nhiều đơn trong cùng input)")
+    total_orders: int = Field(default=0, description="Tổng số đơn hàng được nhận diện")
     processing_time: float = Field(description="Thời gian xử lý (giây)")
     error_message: Optional[str] = Field(None, description="Thông báo lỗi nếu có")
     raw_response: Optional[str] = Field(None, description="Response gốc từ AI (for debugging)")

@@ -124,6 +124,7 @@ async def upload_and_process_order_image(
 
         # Lấy order data
         order_data = result["data"]
+        orders = result.get("orders") or ([order_data] if order_data else [])
 
         # Lưu vào storage
         order_jobs_storage[job_id] = {
@@ -133,7 +134,7 @@ async def upload_and_process_order_image(
             "input_type": "file",
             "status": "completed",
             "order_data": order_data,
-            "raw_response": result.get("raw_response")
+            "orders": orders
         }
 
         return OrderResponse(
@@ -141,8 +142,9 @@ async def upload_and_process_order_image(
             job_id=job_id,
             status="completed",
             data=order_data,
-            processing_time=result["processing_time"],
-            raw_response=result.get("raw_response")
+            orders=orders,
+            total_orders=len(orders),
+            processing_time=result["processing_time"]
         )
 
     except HTTPException:
@@ -207,6 +209,7 @@ async def process_text_order(
 
         # Lấy order data
         order_data = result["data"]
+        orders = result.get("orders") or ([order_data] if order_data else [])
 
         # Lưu vào storage
         order_jobs_storage[job_id] = {
@@ -216,7 +219,7 @@ async def process_text_order(
             "input_text": message_text,
             "status": "completed",
             "order_data": order_data,
-            "raw_response": result.get("raw_response")
+            "orders": orders
         }
 
         return OrderResponse(
@@ -224,8 +227,9 @@ async def process_text_order(
             job_id=job_id,
             status="completed",
             data=order_data,
-            processing_time=result["processing_time"],
-            raw_response=result.get("raw_response")
+            orders=orders,
+            total_orders=len(orders),
+            processing_time=result["processing_time"]
         )
 
     except Exception as e:
@@ -250,7 +254,8 @@ async def get_order_result(job_id: str):
         job_id=job_id,
         status=job_data["status"],
         data=job_data.get("order_data"),
-        raw_response=job_data.get("raw_response"),
+        orders=job_data.get("orders", [job_data.get("order_data")] if job_data.get("order_data") else []),
+        total_orders=len(job_data.get("orders", [job_data.get("order_data")] if job_data.get("order_data") else [])),
         processing_time=0
     )
 

@@ -791,6 +791,18 @@
               </button>
             </div>
           </div>
+          <div id="multiOrderBox" style="display: none; margin-bottom: 12px">
+            <label
+              for="orderSelect"
+              style="font-weight: 600; color: var(--dark); margin-right: 8px"
+              >Đơn hàng tách được:</label
+            >
+            <select
+              id="orderSelect"
+              onchange="switchOrder(this.value)"
+              style="padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px"
+            ></select>
+          </div>
           <div id="needsReviewWarning" style="display: none">
             <div class="alert alert-warning show">
               <span>&#9888;&#65039;</span>
@@ -851,6 +863,50 @@
       const API_URL = window.location.origin;
       let currentJobId = null;
       let currentOrderData = null;
+      let currentOrders = [];
+      let currentOrderIndex = 0;
+      function getOrdersFromResponse(resp) {
+        if (resp && Array.isArray(resp.orders) && resp.orders.length) {
+          return resp.orders.filter((o) => o && typeof o === "object");
+        }
+        if (resp && resp.data && typeof resp.data === "object") return [resp.data];
+        return [];
+      }
+      function formatDateLabel(v) {
+        if (!v) return "-";
+        const s = String(v);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+          const parts = s.split("-");
+          return parts[2] + "/" + parts[1] + "/" + parts[0];
+        }
+        return s;
+      }
+      function renderOrderSelector(orders) {
+        const box = document.getElementById("multiOrderBox");
+        const select = document.getElementById("orderSelect");
+        if (!orders || orders.length <= 1) {
+          box.style.display = "none";
+          select.innerHTML = "";
+          return;
+        }
+        box.style.display = "block";
+        select.innerHTML = orders
+          .map((order, i) => {
+            const dateLabel = formatDateLabel(order.delivery_date || order.order_date);
+            const timeLabel = order.delivery_time || "";
+            const suffix = timeLabel ? " - " + dateLabel + " " + timeLabel : " - " + dateLabel;
+            return '<option value="' + i + '">Đơn ' + (i + 1) + suffix + "</option>";
+          })
+          .join("");
+        select.value = String(currentOrderIndex || 0);
+      }
+      function switchOrder(indexValue) {
+        const idx = parseInt(indexValue, 10);
+        if (isNaN(idx) || !currentOrders[idx]) return;
+        currentOrderIndex = idx;
+        currentOrderData = currentOrders[idx];
+        displayResults(currentOrderData);
+      }
       function formatMoney(val) {
         return new Intl.NumberFormat("vi-VN", {
           style: "currency",
@@ -945,7 +1001,13 @@
           const data = await res.json();
           document.getElementById("loading").classList.remove("active");
           if (data.success) {
-            const od = data.data;
+            const orders = getOrdersFromResponse(data);
+            const od = orders[0];
+            if (!od)
+              return showAlert(
+                "Không nhận diện được đơn hàng từ file này.",
+                "warning",
+              );
             if (
               !od.customer_name &&
               !od.customer_phone &&
@@ -957,8 +1019,17 @@
                 "warning",
               );
             currentJobId = data.job_id;
+            currentOrders = orders;
+            currentOrderIndex = 0;
             currentOrderData = od;
+            renderOrderSelector(orders);
             displayResults(od);
+            if (orders.length > 1) {
+              showAlert(
+                "Đã tách " + orders.length + " đơn hàng. Hãy chọn từng đơn để kiểm tra.",
+                "warning",
+              );
+            }
             showAlert("Nh\u1eadn di\u1ec7n th\u00e0nh c\u00f4ng!", "success");
           } else {
             showAlert(
@@ -989,7 +1060,13 @@
           const data = await res.json();
           document.getElementById("loading").classList.remove("active");
           if (data.success) {
-            const od = data.data;
+            const orders = getOrdersFromResponse(data);
+            const od = orders[0];
+            if (!od)
+              return showAlert(
+                "Không nhận diện được đơn hàng từ text này.",
+                "warning",
+              );
             if (
               !od.customer_name &&
               !od.customer_phone &&
@@ -1001,8 +1078,17 @@
                 "warning",
               );
             currentJobId = data.job_id;
+            currentOrders = orders;
+            currentOrderIndex = 0;
             currentOrderData = od;
+            renderOrderSelector(orders);
             displayResults(od);
+            if (orders.length > 1) {
+              showAlert(
+                "Đã tách " + orders.length + " đơn hàng. Hãy chọn từng đơn để kiểm tra.",
+                "warning",
+              );
+            }
             showAlert("Nh\u1eadn di\u1ec7n th\u00e0nh c\u00f4ng!", "success");
           } else {
             showAlert(
@@ -1024,11 +1110,13 @@
         const inp =
           type === "date"
             ? '<input type="date" value="' + esc(value) + '">'
-            : '<input type="text" value="' +
-              esc(value) +
-              '" placeholder="' +
-              (placeholder || "") +
-              '">';
+            : type === "time"
+              ? '<input type="time" value="' + esc(value) + '">'
+              : '<input type="text" value="' +
+                esc(value) +
+                '" placeholder="' +
+                (placeholder || "") +
+                '">';
         return (
           '<div class="info-item ' +
           cls +
@@ -1136,6 +1224,15 @@
             "",
             "date",
           ) +
+          infoItem("Ng\u00e0y giao", data.delivery_date, "", "", "", "date") +
+          infoItem(
+            "Gi\u1edd giao",
+            data.delivery_time,
+            "HH:MM",
+            false,
+            false,
+            "time",
+          ) +
           infoItem(
             "Thanh to\u00e1n",
             data.payment_method,
@@ -1190,6 +1287,12 @@
             "Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u \u0111\u1ec3 l\u01b0u!",
             "error",
           );
+        if (currentOrders.length > 1 && currentOrderIndex !== 0) {
+          showAlert(
+            "Lưu JSON hiện đang xuất theo job mặc định. Mình sẽ bổ sung export theo từng đơn nếu bạn muốn.",
+            "warning",
+          );
+        }
         try {
           const r = await fetch("/api/export/order/" + currentJobId + "/json", {
             method: "POST",
@@ -1208,6 +1311,12 @@
             "Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u \u0111\u1ec3 l\u01b0u!",
             "error",
           );
+        if (currentOrders.length > 1 && currentOrderIndex !== 0) {
+          showAlert(
+            "Lưu Excel hiện đang xuất theo job mặc định. Mình sẽ bổ sung export theo từng đơn nếu bạn muốn.",
+            "warning",
+          );
+        }
         try {
           const r = await fetch(
             "/api/export/order/" + currentJobId + "/excel",
@@ -1239,8 +1348,12 @@
         document.getElementById("resultSection").classList.remove("active");
         document.getElementById("imagePreview").classList.remove("show");
         document.getElementById("uploadArea").style.display = "block";
+        document.getElementById("multiOrderBox").style.display = "none";
+        document.getElementById("orderSelect").innerHTML = "";
         currentJobId = null;
         currentOrderData = null;
+        currentOrders = [];
+        currentOrderIndex = 0;
         showAlert("\u0110\u00e3 l\u00e0m m\u1edbi!", "success");
       }
     </script>

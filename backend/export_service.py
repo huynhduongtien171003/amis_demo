@@ -485,6 +485,7 @@ class AMISExportService:
 
         # Convert date sang string
         order_date_str = order_data.order_date.isoformat() if order_data.order_date else ""
+        delivery_date_str = order_data.delivery_date.isoformat() if getattr(order_data, 'delivery_date', None) else ""
 
         # Prepare order info
         order_info = {
@@ -494,6 +495,8 @@ class AMISExportService:
             "customer_phone": order_data.customer_phone or "",
             "customer_address": order_data.customer_address or "",
             "order_date": order_date_str,
+            "delivery_date": delivery_date_str,
+            "delivery_time": getattr(order_data, 'delivery_time', "") or "",
             "total_amount": convert_decimal(order_data.total_amount),
             "total_items": len(order_data.items),
             "status": getattr(order_data, 'status', "") or "",
